@@ -1,0 +1,301 @@
+---
+title: "Exploratory Data Analysis (EDA) Sentiment Analysis"
+subtitle: "Data science portfolio"
+author: "by: Manuel Alejandro Matías Astorga"
+date: "2024"
+output: 
+  # prettydoc::html_pretty:
+  html_document:  
+    theme: yeti
+    highlight: tango
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    toc_float: true
+    df_print: paged
+    keep_md: true
+---
+
+# Preparation of the work environment
+
+In this section, we will prepare our working environment by installing and loading the necessary libraries. Proper setup is essential for efficient data handling, visualization, and analysis in R. This step ensures that all the tools and libraries we need are readily available for our exploration and modeling tasks.
+
+## Installing libraries
+
+In this step, we install the necessary libraries for our analysis, including packages for data manipulation, visualization, text mining, and word clouds. Each package serves a unique purpose in the data science workflow, as detailed below:
+
+-   **tidyverse**: For data manipulation and visualization.
+-   **data.table**: Optimized for handling large datasets efficiently.
+-   **ggplot2**: Essential for creating a wide variety of visualizations.
+-   **dplyr**: Used for data wrangling and filtering.
+-   **tm**: Text mining for natural language processing (NLP).
+-   **wordcloud**: Generates word clouds for text data visualization.
+-   **readr**: Efficient data reading.
+-   **knitr**: Supports notebook creation and reporting.
+
+```{r installing packages, eval=FALSE}
+# Install necessary libraries (only first time)
+# install.packages(c("tidyverse", "data.table", "ggplot2", "dplyr", "tm", "wordcloud", "knitr", "tm"))
+```
+
+## Loading libraries
+
+With the libraries installed, we now load them into our R environment. Each library plays a crucial role in the EDA and text mining process, as outlined below. Some libraries may output messages upon loading, so we suppress these to keep the notebook clean and readable.
+
+```{r loading libraries, message=FALSE, warning=FALSE}
+# Load libraries for EDA and text mining
+library(tidyverse)   # Data manipulation and visualization
+library(data.table)  # Efficient data handling for large datasets
+library(ggplot2)     # Data visualization
+library(dplyr)       # Data wrangling
+library(tm)          # Text mining for NLP tasks
+library(wordcloud)   # Word cloud visualization
+library(readr)       # Data reading
+library(knitr)       # For creating notebooks 
+library(DT)
+```
+
+After loading the libraries, we confirm that they have loaded successfully by displaying the versions of key libraries. This ensures compatibility and reproducibility of the analysis.
+
+```{r check libraries, comment=""}
+# Print version of main libraries
+cat("Loaded tidyverse version:", as.character(packageVersion("tidyverse")), "\n")
+cat("Loaded data.table version:", as.character(packageVersion("data.table")), "\n")
+cat("Loaded ggplot2 version:", as.character(packageVersion("ggplot2")), "\n")
+```
+
+## Loading Data {.tabset .tabset-fade .tabset-pills}
+
+### IMDB Dataset
+
+The **IMDB Dataset** contains 50,000 movie reviews labeled with binary sentiments (positive or negative). This dataset is useful for natural language processing (NLP) tasks, particularly sentiment analysis. It includes: - **25,000 reviews for training** and **25,000 reviews for testing**, making it a benchmark dataset for sentiment classification tasks. - Each review is labeled with a **sentiment** value (positive or negative) in order to train and evaluate machine learning models.
+
+The dataset was downloaded from the [Kaggle repository](https://www.kaggle.com/datasets/lakshmi25npathi/imdb-dataset-of-50k-movie-reviews).
+
+<dl>
+
+<dt>
+
+<h4>Dataset Structure</h4>
+
+</dt>
+
+<dd>
+
+Each row in the dataset represents a movie review with two main columns:
+
+-   **review**: The text of the movie review.
+-   **sentiment**: The label for the sentiment, either "positive" or "negative".
+
+**Example**:
+
+| review | sentiment |
+|------------------------------------|------------------------------------|
+| "One of the other reviewers has mentioned that after watching just 1 Oz episode you'll be hooked." | positive |
+| "A wonderful little production. The filming technique is very unassuming- very old-time-B..." | positive |
+
+</dd>
+
+</dl>
+
+We will start by loading the dataset using the `read_csv` function from `readr`.
+
+```{r loading data, message=FALSE, warning=FALSE}
+df <- read_csv("../data/IMDB Dataset.csv",)
+```
+
+<h3>Initial Inspection of Data</h3>
+
+To better understand the dataset, we start by displaying the first few rows using `head(df)`. This gives us a quick overview of the text data format in the `review` column and the labels in the `sentiment` column.
+
+```{r data inspection, warning=FALSE}
+
+# Crear una tabla interactiva con DT
+datatable(df, options = list(pageLength = 5, columnDefs = list(
+    list(targets = 0, render = JS(
+      "function(data, type, row, meta) {",
+      "return type === 'display' && data.length > 50 ?",
+      "'<span title=\"' + data + '\">' + data.substr(0, 50) + '...</span>' : data;",
+      "}"
+    ))
+  )))
+```
+
+1. **Data Format**: 
+  - The dataset is presented as a `tibble` with **6 rows** and **2 columns**: `review` and `sentiment.` Each row represents a single movie review and its corresponding sentiment label. 
+2. **Columns**:
+  - `review`: This column contains text data, where each entry is a movie review. Observations from these initial rows reveal: 
+    - Reviews are written in **natural language**, exhibiting varied lengths and formats.
+    - There is some **HTML-like syntax** present, such as <br />, which may require preprocessing to ensure text uniformity.
+    - Reviews contain **punctuation** and **special characters** (e.g., "), which also suggests that further text processing steps, like removing or standardizing punctuation, could be beneficial. 
+  - `sentiment`: This column contains categorical labels indicating the sentiment associated with each review:
+    - “**positive**”: Suggests the review expresses a favorable opinion about the movie.
+    - “**negative**”: Suggests the review expresses an unfavorable opinion. 
+    - In this preview, 5 of the 6 reviews are labeled as “positive” and 1 as “negative”. However, the actual distribution will need to be confirmed in the full dataset.
+3. **Observations on Sample Reviews**: 
+  - From this small sample, we can observe the following patterns: 
+    - Reviews labeled “positive” often use expressive language that conveys enjoyment or admiration. 
+    - The presence of both “positive” and “negative” labels suggests a balanced dataset, although this balance will need to be validated in the following sentiment distribution analysis.
+  - Based on these initial findings, preprocessing steps such as HTML tag removal, punctuation handling, and standardization of text may be necessary before proceeding with sentiment analysis.
+
+This preliminary examination confirms that the dataset is suitable for a binary sentiment classification task, with review as the text input and sentiment as the target variable. Additionally, it highlights the need for cleaning and standardizing the text data as part of the preprocessing pipeline.
+
+<h3>Structural Overview and Basic Descriptive Statistics</h3>
+
+Let's take a look at the structure of the dataset, which provides an overview of the column types and a summary of the dataset's dimensions. This initial check also helps confirm that the `sentiment` column is a character variable, which we will later convert to binary format for statistical modeling.
+
+```{r data structure, comment=""}
+# Check structure of the dataset
+str(df)
+```
+
+The output of `str(df)` reveals the following information about the dataset:
+
+-   **Data Type**: The dataset is a `spec_tbl_df`, a specialized type of tibble provided by the readr package, which allows for efficient handling and display of large data.
+-   **Dimensions**: The dataset contains **50,000** rows and **2 columns**.
+-   **Columns**:
+    -   `review`: This column is of type `character`, meaning it contains text data. Each entry in this column represents a movie review.
+    -   `sentiment`: This column is also of type `character.` It contains the sentiment label for each review, either “positive” or “negative”.
+-   **Attributes**:
+    -   `spec`: This attribute indicates that `review` and `sentiment` are recognized as `character` columns, which aligns with our expectations.
+    -   `problems`: An attribute that detects any potential parsing issues when loading the data. Since it’s empty, no parsing issues were encountered.
+
+This structure confirms that the dataset is suitable for a sentiment analysis task, where `review` serves as the input text and sentiment as the binary target variable.
+
+```{r data summary, comment=""}
+# Check summary of the dataset
+summary(df)
+```
+
+Since both `review` and `sentiment` are character columns, `summary(df)` provides basic information on their lengths and classes. Here’s a breakdown:
+
+-   `review`: Contains 50,000 entries of type `character`, as expected for text data. This confirms that each entry represents an individual review without any missing values.
+-   `sentiment`: Also contains 50,000 entries of type `character.` Since it aligns with the dataset documentation, this suggests there are no missing labels for sentiment.
+
+The absence of missing values indicates that the dataset is complete and does not require any initial imputation.
+
+### 2nd Dataset
+
+### 3rd dataset
+
+# Sentiment distribution visualization
+
+In this section, we will analyze the distribution of the `sentiment` variable in the IMDB dataset. Understanding the distribution of sentiment is essential for assessing class balance, which can impact model performance. Additionally, we will examine basic descriptive statistics and structural information to ensure that the data aligns with our modeling requirements.
+
+## Exploration of the structure and descriptive statistics
+
+We start by examining the structure of the dataset using `str()`, which provides an overview of column names, types, and data samples. Additionally, we use `summary()` to obtain descriptive statistics, allowing us to identify any potential issues, such as missing values or anomalies.
+
+```{r exploration of the structure and descriptive statistics}
+str(df)
+summary(df)
+```
+
+The structure output confirms that the dataset consists of 50,000 rows and 2 columns: review and sentiment. The review column is of type character, containing text data, while the sentiment column is a factor, with levels “positive” and “negative”. This aligns with our expectation for binary sentiment classification.
+
+## Visualization of the sentiment distribution
+
+To understand the distribution of sentiments, we use a bar plot to visualize the count of each sentiment class. This visualization allows us to quickly assess whether the dataset is balanced, which is important for building an effective classification model.
+
+```{r plotting sentiment distribution, warning=FALSE}
+library(ggplot2)
+ggplot(df, aes(x = sentiment)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  geom_text(stat='count', aes(label=..count..), vjust=2) +
+  ggtitle("Sentiment Distribution") +
+  xlab("Sentiment") +
+  ylab("") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 15, face = "bold"),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12)
+  )
+```
+
+From the plot, we observe that the dataset has equal number of positive and negative reviews. This balance is ideal for our sentiment analysis model, as it reduces the risk of bias toward one class during training.
+
+## Analysis of the review length
+
+Adding a new column of each review and visualizing their distribution
+
+```{r}
+library(dplyr)
+df <- df %>%
+  mutate(review_length = nchar(review))
+
+ggplot(df, aes(x = review_length)) +
+  geom_histogram(binwidth = 10, fill = "steelblue") +
+  ggtitle("Lenght Distribution of reviews") +
+  xlab("Lenght of the reviews") +
+  ylab("") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 15, face = "bold"),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12)
+  )
+```
+
+## Frecuent words and wordcloud
+
+Using the library `tm` for the preprocessing of the text and generate a wordcloud.
+
+```{r frecuent words and wordcloud, warning=FALSE}
+library(tm)
+library(wordcloud)
+library(RColorBrewer)
+
+# Crear un Corpus
+corpus <- Corpus(VectorSource(df$review))
+corpus <- tm_map(corpus, content_transformer(tolower))
+corpus <- tm_map(corpus, removePunctuation)
+corpus <- tm_map(corpus, removeWords, stopwords("english"))
+
+# Generar la Nube de Palabras
+set.seed(1234) # Para reproducibilidad
+wordcloud(corpus, 
+          max.words = 100, 
+          random.order = FALSE, 
+          colors = brewer.pal(8, "Paired"),
+          scale = c(3, 0.5),
+          rot.per = 0.35, 
+          use.r.layout = FALSE)
+
+# Añadir título y fondo claro
+title("Word Cloud of Sentiments", col.main = "black", font.main = 4)
+
+# Mostrar leyenda (opcional)
+# legend("topright", legend = "Most frequent words", col = "blue", cex = 0.8, text.col = "blue")
+
+```
+
+# Statistical analysis and modeling
+
+## Statistical tests
+
+Perdorming statistical tests
+
+```{r}
+t.test(review_length ~ sentiment, data = df)
+```
+
+## Basic statistical model
+
+Exploring some initial models.
+
+```{r}
+# Verificar los valores únicos en sentiment
+unique(df$sentiment)
+
+# Convertir sentiment a una variable binaria
+df$sentiment_binary <- ifelse(df$sentiment == "positive", 1, 0)
+
+# Crear la columna review_length con la longitud de cada reseña
+df$review_length <- nchar(df$review)
+
+# Ajustar el modelo logístico
+glm_model <- glm(sentiment_binary ~ review_length, data = df, family = "binomial")
+summary(glm_model)
+#summary(glm_model)
+```
