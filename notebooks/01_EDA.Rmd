@@ -4,14 +4,14 @@ subtitle: "Data science portfolio"
 author: "by: Manuel Alejandro Matías Astorga"
 date: "2024"
 output: 
-  # prettydoc::html_pretty:
+  prettydoc::html_pretty:
   html_document:  
     theme: yeti
     highlight: tango
     toc: true
     toc_depth: 3
     number_sections: true
-    toc_float: true
+    toc_float: false
     df_print: paged
     keep_md: true
 ---
@@ -53,6 +53,7 @@ library(wordcloud)   # Word cloud visualization
 library(readr)       # Data reading
 library(knitr)       # For creating notebooks 
 library(DT)
+library(stringr)
 ```
 
 After loading the libraries, we confirm that they have loaded successfully by displaying the versions of key libraries. This ensures compatibility and reproducibility of the analysis.
@@ -110,7 +111,7 @@ To better understand the dataset, we start by displaying the first few rows usin
 
 ```{r data inspection, warning=FALSE}
 
-# Crear una tabla interactiva con DT
+# Create a interactive table with  DT
 datatable(df, options = list(pageLength = 5, columnDefs = list(
     list(targets = 0, render = JS(
       "function(data, type, row, meta) {",
@@ -121,22 +122,27 @@ datatable(df, options = list(pageLength = 5, columnDefs = list(
   )))
 ```
 
-1. **Data Format**: 
-  - The dataset is presented as a `tibble` with **6 rows** and **2 columns**: `review` and `sentiment.` Each row represents a single movie review and its corresponding sentiment label. 
-2. **Columns**:
-  - `review`: This column contains text data, where each entry is a movie review. Observations from these initial rows reveal: 
-    - Reviews are written in **natural language**, exhibiting varied lengths and formats.
-    - There is some **HTML-like syntax** present, such as <br />, which may require preprocessing to ensure text uniformity.
-    - Reviews contain **punctuation** and **special characters** (e.g., "), which also suggests that further text processing steps, like removing or standardizing punctuation, could be beneficial. 
-  - `sentiment`: This column contains categorical labels indicating the sentiment associated with each review:
-    - “**positive**”: Suggests the review expresses a favorable opinion about the movie.
-    - “**negative**”: Suggests the review expresses an unfavorable opinion. 
-    - In this preview, 5 of the 6 reviews are labeled as “positive” and 1 as “negative”. However, the actual distribution will need to be confirmed in the full dataset.
-3. **Observations on Sample Reviews**: 
-  - From this small sample, we can observe the following patterns: 
-    - Reviews labeled “positive” often use expressive language that conveys enjoyment or admiration. 
-    - The presence of both “positive” and “negative” labels suggests a balanced dataset, although this balance will need to be validated in the following sentiment distribution analysis.
-  - Based on these initial findings, preprocessing steps such as HTML tag removal, punctuation handling, and standardization of text may be necessary before proceeding with sentiment analysis.
+1.  **Data Format**:
+
+-   The dataset is presented as a `tibble` with **6 rows** and **2 columns**: `review` and `sentiment.` Each row represents a single movie review and its corresponding sentiment label.
+
+2.  **Columns**:
+
+-   `review`: This column contains text data, where each entry is a movie review. Observations from these initial rows reveal:
+    -   Reviews are written in **natural language**, exhibiting varied lengths and formats.
+    -   There is some **HTML-like syntax** present, such as <br />, which may require preprocessing to ensure text uniformity.
+    -   Reviews contain **punctuation** and **special characters** (e.g., "), which also suggests that further text processing steps, like removing or standardizing punctuation, could be beneficial.
+-   `sentiment`: This column contains categorical labels indicating the sentiment associated with each review:
+    -   “**positive**”: Suggests the review expresses a favorable opinion about the movie.
+    -   “**negative**”: Suggests the review expresses an unfavorable opinion.
+    -   In this preview, 5 of the 6 reviews are labeled as “positive” and 1 as “negative”. However, the actual distribution will need to be confirmed in the full dataset.
+
+3.  **Observations on Sample Reviews**:
+
+-   From this small sample, we can observe the following patterns:
+    -   Reviews labeled “positive” often use expressive language that conveys enjoyment or admiration.
+    -   The presence of both “positive” and “negative” labels suggests a balanced dataset, although this balance will need to be validated in the following sentiment distribution analysis.
+-   Based on these initial findings, preprocessing steps such as HTML tag removal, punctuation handling, and standardization of text may be necessary before proceeding with sentiment analysis.
 
 This preliminary examination confirms that the dataset is suitable for a binary sentiment classification task, with review as the text input and sentiment as the target variable. Additionally, it highlights the need for cleaning and standardizing the text data as part of the preprocessing pipeline.
 

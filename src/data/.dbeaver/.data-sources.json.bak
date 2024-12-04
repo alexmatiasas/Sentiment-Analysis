@@ -1,0 +1,35 @@
+{
+	"folders": {},
+	"connections": {
+		"sqlite_jdbc-192c74719fa-673eabdc30075cda": {
+			"provider": "sqlite",
+			"driver": "sqlite_jdbc",
+			"name": "Reviews.csv",
+			"save-password": true,
+			"configuration": {
+				"database": "/Users/alexmatias/Documents/Proyectos Data Science/To the portfolio/Sentiment-Analysis/data/Reviews.csv",
+				"url": "jdbc:sqlite:/Users/alexmatias/Documents/Proyectos Data Science/To the portfolio/Sentiment-Analysis/data/Reviews.csv",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": true,
+				"auth-model": "native"
+			}
+		}
+	},
+	"connection-types": {
+		"dev": {
+			"name": "Development",
+			"color": "255,255,255",
+			"description": "Regular development database",
+			"auto-commit": true,
+			"confirm-execute": false,
+			"confirm-data-change": false,
+			"smart-commit": false,
+			"smart-commit-recover": true,
+			"auto-close-transactions": true,
+			"close-transactions-period": 1800,
+			"auto-close-connections": true,
+			"close-connections-period": 14400
+		}
+	}
+}
