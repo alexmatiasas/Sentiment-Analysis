@@ -11,9 +11,10 @@ output:
     toc: true
     toc_depth: 3
     number_sections: true
-    toc_float: false
+    toc_float: true
     df_print: paged
     keep_md: true
+runtime: shiny
 ---
 
 # Preparation of the work environment
@@ -54,6 +55,7 @@ library(readr)       # Data reading
 library(knitr)       # For creating notebooks 
 library(DT)
 library(stringr)
+library(shiny)
 ```
 
 After loading the libraries, we confirm that they have loaded successfully by displaying the versions of key libraries. This ensures compatibility and reproducibility of the analysis.
@@ -102,7 +104,7 @@ Each row in the dataset represents a movie review with two main columns:
 We will start by loading the dataset using the `read_csv` function from `readr`.
 
 ```{r loading data, message=FALSE, warning=FALSE}
-df <- read_csv("../data/IMDB Dataset.csv",)
+df <- read_csv("../src/data/IMDB Dataset.csv",)
 ```
 
 <h3>Initial Inspection of Data</h3>
@@ -229,6 +231,7 @@ Adding a new column of each review and visualizing their distribution
 library(dplyr)
 df <- df %>%
   mutate(review_length = nchar(review))
+
 
 ggplot(df, aes(x = review_length)) +
   geom_histogram(binwidth = 10, fill = "steelblue") +
