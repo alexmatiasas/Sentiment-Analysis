@@ -1,20 +1,20 @@
 ---
 title: "Exploratory Data Analysis (EDA) Sentiment Analysis"
 subtitle: "Data science portfolio"
-author: "by: Manuel Alejandro Matías Astorga"
+author: "Manuel Alejandro Matías Astorga"
 date: "2024"
 output: 
-  prettydoc::html_pretty:
-  html_document:  
-    theme: yeti
-    highlight: tango
+  # prettydoc::html_pretty:
+  html_document:
+  #   theme: yeti
+  #   highlight: tango
     toc: true
     toc_depth: 3
-    number_sections: true
+  #   number_sections: true
     toc_float: true
-    df_print: paged
-    keep_md: true
-runtime: shiny
+  #   df_print: paged
+  #   keep_md: true
+# runtime: shiny
 ---
 
 # Preparation of the work environment
@@ -41,21 +41,22 @@ In this step, we install the necessary libraries for our analysis, including pac
 
 ## Loading libraries
 
-With the libraries installed, we now load them into our R environment. Each library plays a crucial role in the EDA and text mining process, as outlined below. Some libraries may output messages upon loading, so we suppress these to keep the notebook clean and readable.
+With the libraries installed, we now load them into our R environment. Each library plays a crucial role in the exploratory data analysis (EDA) and text mining process, as outlined below. Some libraries may output messages upon loading, so we suppress these to keep the notebook clean and readable.
 
 ```{r loading libraries, message=FALSE, warning=FALSE}
 # Load libraries for EDA and text mining
 library(tidyverse)   # Data manipulation and visualization
 library(data.table)  # Efficient data handling for large datasets
+library(tidytext)    # Text mining for NLP tasks
 library(ggplot2)     # Data visualization
 library(dplyr)       # Data wrangling
 library(tm)          # Text mining for NLP tasks
 library(wordcloud)   # Word cloud visualization
 library(readr)       # Data reading
 library(knitr)       # For creating notebooks 
-library(DT)
-library(stringr)
-library(shiny)
+library(DT)          # For interactive data tables
+library(stringr)     # For string manipulation
+library(shiny)       # For interactive plots
 ```
 
 After loading the libraries, we confirm that they have loaded successfully by displaying the versions of key libraries. This ensures compatibility and reproducibility of the analysis.
@@ -75,15 +76,7 @@ The **IMDB Dataset** contains 50,000 movie reviews labeled with binary sentiment
 
 The dataset was downloaded from the [Kaggle repository](https://www.kaggle.com/datasets/lakshmi25npathi/imdb-dataset-of-50k-movie-reviews).
 
-<dl>
-
-<dt>
-
 <h4>Dataset Structure</h4>
-
-</dt>
-
-<dd>
 
 Each row in the dataset represents a movie review with two main columns:
 
@@ -93,7 +86,7 @@ Each row in the dataset represents a movie review with two main columns:
 **Example**:
 
 | review | sentiment |
-|------------------------------------|------------------------------------|
+|------------------------------------|:------------------------------------:|
 | "One of the other reviewers has mentioned that after watching just 1 Oz episode you'll be hooked." | positive |
 | "A wonderful little production. The filming technique is very unassuming- very old-time-B..." | positive |
 
@@ -107,37 +100,39 @@ We will start by loading the dataset using the `read_csv` function from `readr`.
 df <- read_csv("../src/data/IMDB Dataset.csv",)
 ```
 
+
 <h3>Initial Inspection of Data</h3>
 
-To better understand the dataset, we start by displaying the first few rows using `head(df)`. This gives us a quick overview of the text data format in the `review` column and the labels in the `sentiment` column.
+To better understand the dataset, we start by displaying the first few rows using `datatable(df)`. This gives us a quick overview of the text data format in the `review` column and the labels in the `sentiment` column.
+
+**NOTE: TO INTERACT WITH THE TABLE, WE HAVE USED `datatable`, BESIDES WE HAVE RENDERED THEIR HTML TAGS TO HAVE A BETTER LOOK OF THE REVIEWS**
 
 ```{r data inspection, warning=FALSE}
 
-# Create a interactive table with  DT
-datatable(df, options = list(pageLength = 5, columnDefs = list(
-    list(targets = 0, render = JS(
-      "function(data, type, row, meta) {",
-      "return type === 'display' && data.length > 50 ?",
-      "'<span title=\"' + data + '\">' + data.substr(0, 50) + '...</span>' : data;",
-      "}"
-    ))
-  )))
+# Create a interactive table with the package DT
+datatable(df, filter = 'top', options = list(pageLength = 6, autoWidth = TRUE), escape = FALSE)
+
+# filter: creates the boxes at the TOP of the columns to find elements in the dataset
+# options:
+# - pageLenght: how many elements of the dataset are shown
+# - autoWidth: TRUE adjust the width of each column to their content.
+# escape: FALSE to show the reviews rendering their HTML tags.
 ```
 
 1.  **Data Format**:
 
--   The dataset is presented as a `tibble` with **6 rows** and **2 columns**: `review` and `sentiment.` Each row represents a single movie review and its corresponding sentiment label.
+-   The dataset is presented as a `datatable` with **6 rows** and **2 columns**: `review` and `sentiment.` Each row represents a single movie review and its corresponding sentiment label. As a dynamic table from the package `DT`, it can be handled to check each review.
 
 2.  **Columns**:
 
 -   `review`: This column contains text data, where each entry is a movie review. Observations from these initial rows reveal:
     -   Reviews are written in **natural language**, exhibiting varied lengths and formats.
-    -   There is some **HTML-like syntax** present, such as <br />, which may require preprocessing to ensure text uniformity.
+    -   There is some **HTML-like syntax** present, such as `<br />`, but they are rendered by using `escape = FALSE` in the snippet code above in `datatable()`.
     -   Reviews contain **punctuation** and **special characters** (e.g., "), which also suggests that further text processing steps, like removing or standardizing punctuation, could be beneficial.
 -   `sentiment`: This column contains categorical labels indicating the sentiment associated with each review:
     -   “**positive**”: Suggests the review expresses a favorable opinion about the movie.
     -   “**negative**”: Suggests the review expresses an unfavorable opinion.
-    -   In this preview, 5 of the 6 reviews are labeled as “positive” and 1 as “negative”. However, the actual distribution will need to be confirmed in the full dataset.
+    -   In this preview (the first 6 reviews), 5 of the 6 reviews are labeled as “positive” and 1 as “negative”. However, the actual distribution will need to be confirmed in the full dataset.
 
 3.  **Observations on Sample Reviews**:
 
@@ -162,7 +157,7 @@ The output of `str(df)` reveals the following information about the dataset:
 -   **Data Type**: The dataset is a `spec_tbl_df`, a specialized type of tibble provided by the readr package, which allows for efficient handling and display of large data.
 -   **Dimensions**: The dataset contains **50,000** rows and **2 columns**.
 -   **Columns**:
-    -   `review`: This column is of type `character`, meaning it contains text data. Each entry in this column represents a movie review.
+    -   `review`: This column is of type `character`, meaning it contains text data. Each entry in this column represents a movie review. Due to their extension, they are separated by the "| __truncated__ " expression.
     -   `sentiment`: This column is also of type `character.` It contains the sentiment label for each review, either “positive” or “negative”.
 -   **Attributes**:
     -   `spec`: This attribute indicates that `review` and `sentiment` are recognized as `character` columns, which aligns with our expectations.
@@ -180,131 +175,280 @@ Since both `review` and `sentiment` are character columns, `summary(df)` provide
 -   `review`: Contains 50,000 entries of type `character`, as expected for text data. This confirms that each entry represents an individual review without any missing values.
 -   `sentiment`: Also contains 50,000 entries of type `character.` Since it aligns with the dataset documentation, this suggests there are no missing labels for sentiment.
 
-The absence of missing values indicates that the dataset is complete and does not require any initial imputation.
+The absence of missing values indicates that the dataset is complete and does not require any initial imputation. This allows us to proceed directly with the exploratory data analysis (EDA) and text preprocessing steps.
+
+<h3>Cleaning the text!</h3>
+
+Let's see how the text data looks like before and after cleaning. Before, we used `datatable()` to display the first few rows of the dataset, which don't showed the presence of HTML tags in the reviews due to they were rendered. As a better reference of the dataset, let's use `tibble` to show the data as it is showed in the `.csv` file.
+
+
+
+```{r data inspection before cleaning - html tags, warning=FALSE}
+# Create a static table with the package tibble (included in tidyverse)
+print(as_tibble(df), n = 5)
+```
+
+
+
+1. **Removing HTML tags**:
+
+Before to proceed with the EDA, we need to clean a little bit our data. Besides the data has not missing values, it has a lot of HTML tags, special characters and uppercase letters. We will convert the reviews into lowercase and remove the HTML tags and special characters. We can use `stringr` to do this.
+
+```{r cleaning text - html tags, warning=FALSE}
+# Cleaning the review column
+df$review <- stringr::str_replace_all(df$review, "<.*?>", "")
+```
+
+- `<.*?>` is the regular expression that matches any HTML tag and is replaced by an empty string `""`.
+  - `<` matches the character `<` literally (case sensitive).
+  - `.*?` matches any character (except for line terminators) as few times as possible. The `?` makes the `.*` lazy (or not greedy), so it matches as few characters as possible. This is important to avoid removing the entire text between two tags.
+  - `>` matches the character `>` literally (case sensitive).
+  
+**Note: if we'd missed the `?` in `.*?`, it would have been greedy and would have removed the entire text between the first `<` and the last `>` in the string.**
+
+The above code uses the `str_replace_all` function from the `stringr` package to remove all HTML tags from the `review` column, `"<.*?>"` is a regular expression that matches any HTML tag and is replaced by an empty string `""`. This step is essential for cleaning the text data and preparing it for further analysis.
+
+```{r data inspection after cleaning - html tags, warning=FALSE}
+# Create a static table with the package tibble (included in tidyverse)
+print(as_tibble(df), n = 5)
+```
+
+2. **Removing special characters and punctuation**
+
+But as we can see in the 5th row, there are still some special characters in the reviews, like the escape character `\"` due to the reviews in this dataset are just between `""`. We can remove these special characters using the `str_replace_all()` function.
+
+```{r cleaning text - special characters, warning=FALSE}
+# Remove special characters and punctuation
+df$review <- stringr::str_replace_all(df$review, "[^[:alnum:]\\s]", "")
+```
+
+- `[^[:alnum:]\\s]` is the regular expression that matches any character that is not a letter, digit, or whitespace. 
+  - The `^` inside the square brackets `[]` negates the character class, meaning it matches any character that is not in the specified class. 
+  - The `[:alnum:]` class matches any alphanumeric character (letters and digits), while 
+  - `\\s` matches any whitespace character (space, tab, newline), it has double `\` cause `\s` has a special meaning in the strings in R, so it needs to be escaped.
+
+The code above uses the `str_replace_all` function with the regular expression `"[^[:alnum:]\\s]"` to remove all special characters and punctuation from the `review` column. Now let's check the data again to see the changes.
+
+```{r data inspection after cleaning - special characters, warning=FALSE}
+# Create a static table with the package tibble (included in tidyverse)
+print(as_tibble(df), n = 5)
+```
+
+3. **Converting to lowercase**
+
+Next step is to convert all the text to lowercase and remove special characters. So we will use the `tolower()` function and the `str_replace_all()` function to remove all special characters.
+
+```{r cleaning text - lowercase and special characters, warning=FALSE}
+# Convert the review column to lowercase
+df$review <- tolower(df$review)
+```
+
+and then, the database looks like this
+
+```{r data inspection after cleaning - lowercase, warning=FALSE}
+# Create a static table with the package tibble (included in tidyverse)
+print(as_tibble(df), n = 5)
+```
+
+4. **Remove Extra Whitespaces**
+
+To this point, our database looks pretty good, but may have some extra whitespaces that we can remove to have a more uniform text. We can use the `str_squish()` function from the `stringr` package to remove extra whitespaces.
+
+```{r data inspection - after clean, warning=FALSE}
+# Create a interactive table with the package DT
+datatable(df, filter = 'top', options = list(pageLength = 3, autoWidth = TRUE), escape = FALSE)
+```
+
+To remove extra whitespaces to obtains a more uniform text, we use
+
+```{r}
+# Remove extra whitespaces
+df$review <- stringr::str_squish(df$review)
+```
+
+so we have
+
+```{r data inspection after cleaning - whitespaces, warning=FALSE}
+# Create a static table with the package tibble (included in tidyverse)
+print(as_tibble(df), n = 5)
+```
+
+5. **Tokenization**
+
+We have treated our database to be analyzed, but we may need to tokenize the reviews to analyze the words. We can use the `unnest_tokens()` function from the `tidytext` package to tokenize the reviews.
+
+```{r tokenization, warning=FALSE}
+# Tokenize text into words
+tokenized_reviews <- df %>%
+  unnest_tokens(word, review)
+```
+
+and then, we can see the first 5 rows of the tokenized reviews
+
+```{r data inspection after tokenization, warning=FALSE}
+# Create a static table with the package tibble (included in tidyverse)
+print(as_tibble(tokenized_reviews), n = 5)
+```
+
+The tokenization process has split each review into individual words, creating a new dataset with one word per row. This format is suitable for further text analysis tasks, such as word frequency analysis, sentiment scoring, and topic modeling.
 
 ### 2nd Dataset
 
 ### 3rd dataset
 
-# Sentiment distribution visualization
+## Exploratory Data Analysis (EDA) {.tabset .tabset-fade .tabset-pills}
+
+### IMDB Dataset
 
 In this section, we will analyze the distribution of the `sentiment` variable in the IMDB dataset. Understanding the distribution of sentiment is essential for assessing class balance, which can impact model performance. Additionally, we will examine basic descriptive statistics and structural information to ensure that the data aligns with our modeling requirements.
 
-## Exploration of the structure and descriptive statistics
+<!-- #### Exploration of the structure and descriptive statistics -->
 
-We start by examining the structure of the dataset using `str()`, which provides an overview of column names, types, and data samples. Additionally, we use `summary()` to obtain descriptive statistics, allowing us to identify any potential issues, such as missing values or anomalies.
+<!-- We start by examining the structure of the dataset using `str()`, which provides an overview of column names, types, and data samples. Additionally, we use `summary()` to obtain descriptive statistics, allowing us to identify any potential issues, such as missing values or anomalies. -->
 
-```{r exploration of the structure and descriptive statistics}
-str(df)
-summary(df)
+<!-- ```{r exploration of the structure and descriptive statistics} -->
+<!-- str(df) -->
+<!-- summary(df) -->
+<!-- ``` -->
+
+<!-- The structure output confirms that the dataset consists of 50,000 rows and 2 columns: review and sentiment. The review column is of type character, containing text data, while the sentiment column is a factor, with levels “positive” and “negative”. This aligns with our expectation for binary sentiment classification. -->
+
+#### Word Frequency Analysis
+
+To understand the most common words in the reviews, we perform a word frequency analysis. This analysis helps identify the most frequent words used in the reviews, providing insights into the language patterns and topics discussed in the dataset.
+
+```{r word frequency analysis, warning=FALSE}
+# Calculate word frequencies
+word_counts <- tokenized_reviews %>%
+  count(word, sort = TRUE)
+
+# Visualize the most frequent words
+word_counts %>%
+  top_n(20, n) %>%
+  ggplot(aes(x = reorder(word, n), y = n)) +
+  geom_segment(aes(x = reorder(word, n), 
+                  xend = reorder(word, n),
+                  y = 0, 
+                  yend = n)) +
+  geom_point(color = "blue", size = 3) +
+  coord_flip() +
+  labs(title = "Most Common Words",
+       x = "Words", 
+       y = "Frequency") +
+  theme_minimal()
 ```
 
-The structure output confirms that the dataset consists of 50,000 rows and 2 columns: review and sentiment. The review column is of type character, containing text data, while the sentiment column is a factor, with levels “positive” and “negative”. This aligns with our expectation for binary sentiment classification.
+The lollipop chart above displays the most common words in the reviews, sorted by frequency. The visualization provides insights into the language patterns and topics discussed in the dataset. Further analysis can be performed to explore the context and sentiment associated with these words.
 
-## Visualization of the sentiment distribution
+a
 
-To understand the distribution of sentiments, we use a bar plot to visualize the count of each sentiment class. This visualization allows us to quickly assess whether the dataset is balanced, which is important for building an effective classification model.
+<!-- #### Visualization of the sentiment distribution -->
 
-```{r plotting sentiment distribution, warning=FALSE}
-library(ggplot2)
-ggplot(df, aes(x = sentiment)) +
-  geom_bar(fill = "skyblue", color = "black") +
-  geom_text(stat='count', aes(label=..count..), vjust=2) +
-  ggtitle("Sentiment Distribution") +
-  xlab("Sentiment") +
-  ylab("") +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5, size = 15, face = "bold"),
-    axis.title.x = element_text(size = 12),
-    axis.title.y = element_text(size = 12)
-  )
-```
+<!-- To understand the distribution of sentiments, we use a bar plot to visualize the count of each sentiment class. This visualization allows us to quickly assess whether the dataset is balanced, which is important for building an effective classification model. -->
 
-From the plot, we observe that the dataset has equal number of positive and negative reviews. This balance is ideal for our sentiment analysis model, as it reduces the risk of bias toward one class during training.
+<!-- ```{r plotting sentiment distribution, warning=FALSE} -->
+<!-- library(ggplot2) -->
+<!-- ggplot(df, aes(x = sentiment)) + -->
+<!--   geom_bar(fill = "skyblue", color = "black") + -->
+<!--   geom_text(stat='count', aes(label=..count..), vjust=2) + -->
+<!--   ggtitle("Sentiment Distribution") + -->
+<!--   xlab("Sentiment") + -->
+<!--   ylab("") + -->
+<!--   theme_minimal() + -->
+<!--   theme( -->
+<!--     plot.title = element_text(hjust = 0.5, size = 15, face = "bold"), -->
+<!--     axis.title.x = element_text(size = 12), -->
+<!--     axis.title.y = element_text(size = 12) -->
+<!--   ) -->
+<!-- ``` -->
 
-## Analysis of the review length
+<!-- From the plot, we observe that the dataset has equal number of positive and negative reviews. This balance is ideal for our sentiment analysis model, as it reduces the risk of bias toward one class during training. -->
 
-Adding a new column of each review and visualizing their distribution
+<!-- #### Analysis of the review length -->
 
-```{r}
-library(dplyr)
-df <- df %>%
-  mutate(review_length = nchar(review))
+<!-- Adding a new column of each review and visualizing their distribution -->
+
+<!-- ```{r} -->
+<!-- library(dplyr) -->
+<!-- df <- df %>% -->
+<!--   mutate(review_length = nchar(review)) -->
 
 
-ggplot(df, aes(x = review_length)) +
-  geom_histogram(binwidth = 10, fill = "steelblue") +
-  ggtitle("Lenght Distribution of reviews") +
-  xlab("Lenght of the reviews") +
-  ylab("") +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5, size = 15, face = "bold"),
-    axis.title.x = element_text(size = 12),
-    axis.title.y = element_text(size = 12)
-  )
-```
+<!-- ggplot(df, aes(x = review_length)) + -->
+<!--   geom_histogram(binwidth = 10, fill = "steelblue") + -->
+<!--   ggtitle("Lenght Distribution of reviews") + -->
+<!--   xlab("Lenght of the reviews") + -->
+<!--   ylab("") + -->
+<!--   theme_minimal() + -->
+<!--   theme( -->
+<!--     plot.title = element_text(hjust = 0.5, size = 15, face = "bold"), -->
+<!--     axis.title.x = element_text(size = 12), -->
+<!--     axis.title.y = element_text(size = 12) -->
+<!--   ) -->
+<!-- ``` -->
 
-## Frecuent words and wordcloud
+<!-- #### Frecuent words and wordcloud -->
 
-Using the library `tm` for the preprocessing of the text and generate a wordcloud.
+<!-- Using the library `tm` for the preprocessing of the text and generate a wordcloud. -->
 
-```{r frecuent words and wordcloud, warning=FALSE}
-library(tm)
-library(wordcloud)
-library(RColorBrewer)
+<!-- ```{r frecuent words and wordcloud, warning=FALSE} -->
+<!-- library(tm) -->
+<!-- library(wordcloud) -->
+<!-- library(RColorBrewer) -->
 
-# Crear un Corpus
-corpus <- Corpus(VectorSource(df$review))
-corpus <- tm_map(corpus, content_transformer(tolower))
-corpus <- tm_map(corpus, removePunctuation)
-corpus <- tm_map(corpus, removeWords, stopwords("english"))
+<!-- # Crear un Corpus -->
+<!-- corpus <- Corpus(VectorSource(df$review)) -->
+<!-- corpus <- tm_map(corpus, content_transformer(tolower)) -->
+<!-- corpus <- tm_map(corpus, removePunctuation) -->
+<!-- corpus <- tm_map(corpus, removeWords, stopwords("english")) -->
 
-# Generar la Nube de Palabras
-set.seed(1234) # Para reproducibilidad
-wordcloud(corpus, 
-          max.words = 100, 
-          random.order = FALSE, 
-          colors = brewer.pal(8, "Paired"),
-          scale = c(3, 0.5),
-          rot.per = 0.35, 
-          use.r.layout = FALSE)
+<!-- # Generar la Nube de Palabras -->
+<!-- set.seed(1234) # Para reproducibilidad -->
+<!-- wordcloud(corpus,  -->
+<!--           max.words = 100,  -->
+<!--           random.order = FALSE,  -->
+<!--           colors = brewer.pal(8, "Paired"), -->
+<!--           scale = c(3, 0.5), -->
+<!--           rot.per = 0.35,  -->
+<!--           use.r.layout = FALSE) -->
 
-# Añadir título y fondo claro
-title("Word Cloud of Sentiments", col.main = "black", font.main = 4)
+<!-- # Añadir título y fondo claro -->
+<!-- title("Word Cloud of Sentiments", col.main = "black", font.main = 4) -->
 
-# Mostrar leyenda (opcional)
-# legend("topright", legend = "Most frequent words", col = "blue", cex = 0.8, text.col = "blue")
+<!-- # Mostrar leyenda (opcional) -->
+<!-- # legend("topright", legend = "Most frequent words", col = "blue", cex = 0.8, text.col = "blue") -->
 
-```
+<!-- ``` -->
 
-# Statistical analysis and modeling
+<!-- #### Statistical analysis and modeling -->
 
-## Statistical tests
+<!-- ##### Statistical tests   -->
 
-Perdorming statistical tests
+<!-- Performing statistical tests -->
 
-```{r}
-t.test(review_length ~ sentiment, data = df)
-```
+<!-- ```{r} -->
+<!-- t.test(review_length ~ sentiment, data = df) -->
+<!-- ``` -->
 
-## Basic statistical model
+<!-- ##### Basic statistical model -->
 
-Exploring some initial models.
+<!-- Exploring some initial models. -->
 
-```{r}
-# Verificar los valores únicos en sentiment
-unique(df$sentiment)
+<!-- ```{r} -->
+<!-- # Verificar los valores únicos en sentiment -->
+<!-- unique(df$sentiment) -->
 
-# Convertir sentiment a una variable binaria
-df$sentiment_binary <- ifelse(df$sentiment == "positive", 1, 0)
+<!-- # Convertir sentiment a una variable binaria -->
+<!-- df$sentiment_binary <- ifelse(df$sentiment == "positive", 1, 0) -->
 
-# Crear la columna review_length con la longitud de cada reseña
-df$review_length <- nchar(df$review)
+<!-- # Crear la columna review_length con la longitud de cada reseña -->
+<!-- df$review_length <- nchar(df$review) -->
 
-# Ajustar el modelo logístico
-glm_model <- glm(sentiment_binary ~ review_length, data = df, family = "binomial")
-summary(glm_model)
-#summary(glm_model)
-```
+<!-- # Ajustar el modelo logístico -->
+<!-- glm_model <- glm(sentiment_binary ~ review_length, data = df, family = "binomial") -->
+<!-- summary(glm_model) -->
+<!-- #summary(glm_model) -->
+<!-- ``` -->
+<!-- ### 2nd dataset -->
+
+<!-- ### 3rd dataset -->

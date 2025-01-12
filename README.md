@@ -93,26 +93,3 @@ print(df.info())
 ```Python
 print(df['sentiment'].value_counts())  # Ver distribución de clases
 ```
-
-Pikachu:
-
-1. Butterfree
-2. Zapdos EX
-3. Wigglituff EX
-
-Mewtwo:
-
-1. Venomoth
-2. Cloyster
-3. Krabby
-4. Gengar
-5. Golbat
-6. Pidgeot
-7. Porygon
-
-Charizard:
-
-1. Vileplume
-2. Flareon
-3. Machamp
-4. Machamp EX
