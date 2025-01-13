@@ -124,6 +124,7 @@ celerybeat.pid
 .env
 .venv
 env/
+renv/
 venv/
 ENV/
 env.bak/
@@ -165,3 +166,25 @@ cython_debug/
 Reviews.csv
 /data/yelp_dataset 
 .Rproj.user
+src/data/IMDB\ Dataset.csv
+
+# temporal files
+.DS_Store
+.Rhistory
+.RData
+
+# generated with notebooks
+notebooks/*.html
+notebooks/*.nb.html
+notebooks/*.ipynb_checkpoints
+notebooks/*.md
+
+# RStudio project files
+.Rproj.user/
+
+# LFS config
+.gitattributes
+
+# hidden files
+.*
+!.gitignore
