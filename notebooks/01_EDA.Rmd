@@ -49,6 +49,7 @@ library(tidyverse)   # Data manipulation and visualization
 library(data.table)  # Efficient data handling for large datasets
 library(tidytext)    # Text mining for NLP tasks
 library(ggplot2)     # Data visualization
+library(scales)      # For formatting scales in ggplot2
 library(dplyr)       # Data wrangling
 library(stopwords)  # Stopwords for text analysis
 library(tibble)
@@ -324,27 +325,28 @@ To understand the most common words in the reviews, we perform a word frequency 
 word_counts <- tokenized_reviews %>%
   count(word, sort = TRUE)
 
-# Visualize the most frequent words
 word_counts %>%
   top_n(20, n) %>%
-  ggplot(aes(x = reorder(word, n), y = n)) +
-  geom_segment(aes(x = reorder(word, n), 
-                  xend = reorder(word, n),
-                  y = 0, 
-                  yend = n), size = 1.2, color = "skyblue") +
-  geom_point(color = "blue", size = 3) +
+  mutate(word = reorder(word, n),
+         color = ifelse(row_number() == 1, "red", "blue")) %>% # Color condicional
+  ggplot(aes(x = word, y = n, color = color)) +
+  geom_segment(aes(xend = word, yend = 0), size = 1.2) +
+  geom_point(size = 4) +
+  geom_text(aes(label = comma(n), y = n), nudge_y = 50, hjust = -0.3, size=3) +
+  scale_color_identity() + # Importante: usar scale_color_identity()
   coord_flip() +
-  labs(title = "Top 20 Most Common Words",
-       x = "Words", 
-       y = "Frequency") +
+  expand_limits(y=c(0, max(word_counts$n) * 1.1)) +
+  labs(title = "Top 20 Most Common Words (Con Stop Words)", x = "Words", y = "Frequency") +
   theme_minimal() +
-  theme(panel.grid.major.y = element_blank(),
-      axis.text.y = element_text(size = 12))
+  theme(panel.grid.major.y = element_blank(), axis.text.y = element_text(size = 12)) +
+  scale_y_continuous(labels = comma)
 ```
 
 The lollipop chart above displays the most common words in the reviews, sorted by frequency. The visualization provides insights into the language patterns and topics discussed in the dataset.
 
 As we can see in the plot, the most frequent words include common English words like "the," "and," "a," and "of," which are known as stopwords. These words are essential for sentence structure but may not provide meaningful insights for sentiment analysis. We will address this issue by removing stopwords in the next step.
+
+<!-- **note: using reorder in each part of the construction of the plot, from aes() function is not recommendable, but it's just to show another way to construct the plot. In the next section, we'll make the plot using mutate() which is more efficient.** -->
 
 #### Removing Stopwords
 
@@ -352,7 +354,7 @@ Stopwords are common words that do not carry significant meaning in text analysi
 
 ```{r removing stopwords, warning=FALSE}
 # Load the stopwords dataset
-# stop_words <- stopwords::stopwords("en")
+# stop_words <- stopwords::stopwords("en") - this needs to be turned into a dataframe due to the anti_join function
 stop_words_df <- tibble(word = stopwords("en"))
 # or to a extended list of stopwords
 # stop_words_extended <- stop_words %>% filter(lexicon == "snowball") %>% select(word)
@@ -361,21 +363,31 @@ stop_words_df <- tibble(word = stopwords("en"))
 and then we obtain
 
 ```{r word frequency analysis after removing stopwords, warning=FALSE}
-# Remove stop words and create the plot
-word_counts %>%
+# Calculating the maximum frequency for the plot after removing stopwords
+max_freq_no_sw <- word_counts %>%
   anti_join(stop_words_df, by = "word") %>%
+  pull(n) %>%
+  max()
+
+word_counts %>%
+  anti_join(tibble(word = stopwords("en")), by = "word") %>%
   top_n(20, n) %>%
-  mutate(word = reorder(word, n)) %>% # Important: reorder AFTER filtering
-  ggplot(aes(x = word, y = n)) +
-  geom_segment(aes(xend = word, yend = 0), size = 1.2, color = "skyblue") + # Lollipop stems
-  geom_point(size = 4, color = "blue") + # Lollipop points
+  mutate(word = reorder(word, n),
+         color = ifelse(row_number() == 1, "red", "blue")) %>% # Color condicional
+  ggplot(aes(x = word, y = n, color = color)) +
+  geom_segment(aes(xend = word, yend = 0), size = 1.2) +
+  geom_point(size = 4) +
+  geom_text(aes(label = comma(n), y = n), nudge_y = 50, hjust = -0.3, size=3) +
+  scale_color_identity() + # Importante: usar scale_color_identity()
   coord_flip() +
-  labs(title = "Top 20 most common words (no Stop Words)", x = "Words", y = "Frequen") +
+  expand_limits(y = c(0, max_freq_no_sw * 1.1)) + # Usar el nuevo máximo
+  labs(title = "Top 20 Most Common Words (Sin Stop Words)", x = "Words", y = "Frequency") +
   theme_minimal() +
-  theme(panel.grid.major.y = element_blank(),
-        axis.text.y = element_text(size = 12)) # Improve y-axis text size
+  theme(panel.grid.major.y = element_blank(), axis.text.y = element_text(size = 12)) +
+  scale_y_continuous(labels = comma)
 ```
 
+as we can see
 
 <!-- #### Visualization of the sentiment distribution -->
 
