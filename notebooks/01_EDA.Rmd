@@ -331,13 +331,15 @@ word_counts %>%
   geom_segment(aes(x = reorder(word, n), 
                   xend = reorder(word, n),
                   y = 0, 
-                  yend = n)) +
+                  yend = n), size = 1.2, color = "skyblue") +
   geom_point(color = "blue", size = 3) +
   coord_flip() +
-  labs(title = "Most Common Words",
+  labs(title = "Top 20 Most Common Words",
        x = "Words", 
        y = "Frequency") +
-  theme_minimal()
+  theme_minimal() +
+  theme(panel.grid.major.y = element_blank(),
+      axis.text.y = element_text(size = 12))
 ```
 
 The lollipop chart above displays the most common words in the reviews, sorted by frequency. The visualization provides insights into the language patterns and topics discussed in the dataset.
@@ -358,7 +360,7 @@ stop_words_df <- tibble(word = stopwords("en"))
 
 and then we obtain
 
-```{r data inspection after removing stopwords, warning=FALSE}
+```{r word frequency analysis after removing stopwords, warning=FALSE}
 # Remove stop words and create the plot
 word_counts %>%
   anti_join(stop_words_df, by = "word") %>%
@@ -368,7 +370,7 @@ word_counts %>%
   geom_segment(aes(xend = word, yend = 0), size = 1.2, color = "skyblue") + # Lollipop stems
   geom_point(size = 4, color = "blue") + # Lollipop points
   coord_flip() +
-  labs(title = "Top 20 palabras más frecuentes (sin Stop Words)", x = "Palabras", y = "Frecuencia") +
+  labs(title = "Top 20 most common words (no Stop Words)", x = "Words", y = "Frequen") +
   theme_minimal() +
   theme(panel.grid.major.y = element_blank(),
         axis.text.y = element_text(size = 12)) # Improve y-axis text size
