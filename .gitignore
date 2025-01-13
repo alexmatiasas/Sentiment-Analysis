@@ -165,7 +165,6 @@ cython_debug/
 /data 
 Reviews.csv
 /data/yelp_dataset 
-.Rproj.user
 src/data/IMDB\ Dataset.csv
 
 # temporal files
@@ -181,6 +180,7 @@ notebooks/*.md
 
 # RStudio project files
 .Rproj.user/
+.Rproj
 
 # LFS config
 .gitattributes
