@@ -50,6 +50,8 @@ library(data.table)  # Efficient data handling for large datasets
 library(tidytext)    # Text mining for NLP tasks
 library(ggplot2)     # Data visualization
 library(dplyr)       # Data wrangling
+library(stopwords)  # Stopwords for text analysis
+library(tibble)
 library(tm)          # Text mining for NLP tasks
 library(wordcloud)   # Word cloud visualization
 library(readr)       # Data reading
@@ -338,9 +340,40 @@ word_counts %>%
   theme_minimal()
 ```
 
-The lollipop chart above displays the most common words in the reviews, sorted by frequency. The visualization provides insights into the language patterns and topics discussed in the dataset. Further analysis can be performed to explore the context and sentiment associated with these words.
+The lollipop chart above displays the most common words in the reviews, sorted by frequency. The visualization provides insights into the language patterns and topics discussed in the dataset.
 
-a
+As we can see in the plot, the most frequent words include common English words like "the," "and," "a," and "of," which are known as stopwords. These words are essential for sentence structure but may not provide meaningful insights for sentiment analysis. We will address this issue by removing stopwords in the next step.
+
+#### Removing Stopwords
+
+Stopwords are common words that do not carry significant meaning in text analysis tasks. Removing stopwords can improve the quality of text analysis by focusing on content words that convey sentiment and meaning. We will remove stopwords from the tokenized reviews using the `anti_join()` function from the `tidytext` package.
+
+```{r removing stopwords, warning=FALSE}
+# Load the stopwords dataset
+# stop_words <- stopwords::stopwords("en")
+stop_words_df <- tibble(word = stopwords("en"))
+# or to a extended list of stopwords
+# stop_words_extended <- stop_words %>% filter(lexicon == "snowball") %>% select(word)
+```
+
+and then we obtain
+
+```{r data inspection after removing stopwords, warning=FALSE}
+# Remove stop words and create the plot
+word_counts %>%
+  anti_join(stop_words_df, by = "word") %>%
+  top_n(20, n) %>%
+  mutate(word = reorder(word, n)) %>% # Important: reorder AFTER filtering
+  ggplot(aes(x = word, y = n)) +
+  geom_segment(aes(xend = word, yend = 0), size = 1.2, color = "skyblue") + # Lollipop stems
+  geom_point(size = 4, color = "blue") + # Lollipop points
+  coord_flip() +
+  labs(title = "Top 20 palabras más frecuentes (sin Stop Words)", x = "Palabras", y = "Frecuencia") +
+  theme_minimal() +
+  theme(panel.grid.major.y = element_blank(),
+        axis.text.y = element_text(size = 12)) # Improve y-axis text size
+```
+
 
 <!-- #### Visualization of the sentiment distribution -->
 
