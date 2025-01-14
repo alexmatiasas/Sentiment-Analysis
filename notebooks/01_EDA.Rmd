@@ -4,16 +4,16 @@ subtitle: "Data science portfolio"
 author: "Manuel Alejandro Matías Astorga"
 date: "2024"
 output: 
-  # prettydoc::html_pretty:
-  html_document:
-  #   theme: yeti
-  #   highlight: tango
+  prettydoc::html_pretty:
+  # html_document:
+    theme: yeti
+    highlight: tango
     toc: true
     toc_depth: 3
-  #   number_sections: true
-    toc_float: true
-  #   df_print: paged
-  #   keep_md: true
+    number_sections: true
+    toc_float: false
+    df_print: paged
+    keep_md: true
 # runtime: shiny
 ---
 
@@ -353,7 +353,10 @@ word_counts %>%
   scale_color_identity() +
   coord_flip() +
   expand_limits(y=c(0, max(word_counts$n) * 1.1)) +
-  labs(title = "Top 20 Most Common Words (Con Stop Words, 2 destacados)", x = "Words", y = "Frequency") +
+  labs(title = "Top 20 Most Common Words (with Stop Words)", 
+       subtitle = paste(" Most common word (with stopwords):", top_word_with_sw, "(in red)\n",
+                        "Most common word (no stopwords):", top_word_no_sw, "(in green)"),
+       x = "Words", y = "Frequency") +
   theme_minimal() +
   theme(panel.grid.major.y = element_blank(), axis.text.y = element_text(size = 12)) +
   scale_y_continuous(labels = comma)
@@ -380,7 +383,7 @@ stop_words_df <- tibble(word = stopwords("en"))
 and then we obtain
 
 ```{r word frequency analysis after removing stopwords, warning=FALSE}
-top_word_with_sw <- word_counts %>%
+max_top_word_with_sw <- word_counts %>%
   anti_join(stop_words_df, by = "word") %>%
   pull(n) %>%
   max()
@@ -396,14 +399,18 @@ word_counts %>%
   geom_text(aes(label = comma(n), y = n), nudge_y = 50, hjust = -0.3, size=3) +
   scale_color_identity() + # Importante: usar scale_color_identity()
   coord_flip() +
-  expand_limits(y = c(0, top_word_with_sw * 1.1)) + # Usar el nuevo máximo
+  expand_limits(y = c(0, max_top_word_with_sw * 1.1)) + # Usar el nuevo máximo
   labs(title = "Top 20 Most Common Words (with no stopwords)", x = "Words", y = "Frequency") +
   theme_minimal() +
   theme(panel.grid.major.y = element_blank(), axis.text.y = element_text(size = 12)) +
   scale_y_continuous(labels = comma)
 ```
 
-once we have eliminated the stopwords, we can see the most common words in the reviews are, as we could expect, words like "movie" or "film" which is something obvious, because of the origin of the dataset.
+once we have eliminated the stopwords, we can see the most common words in the reviews are, as we could expect, words like "movie" or "film" which is something obvious, because of the origin of the dataset. Before to proceed with the analysis of the sentiment distribution, we could add one or two more steps to clean the text, like stemming the words or lemmatization of the words.
+
+#### Stemming
+
+Stemming is the process of reducing words to their root form, which helps to group together words with similar meanings. We can apply stemming to the tokenized reviews using the `wordStem()` function from the `SnowballC` package.
 
 <!-- #### Visualization of the sentiment distribution -->
 
@@ -514,4 +521,4 @@ once we have eliminated the stopwords, we can see the most common words in the r
 <!-- ``` -->
 <!-- ### 2nd dataset -->
 
-<!-- ### 3rd dataset --> a
+<!-- ### 3rd dataset --> 
