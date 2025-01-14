@@ -182,7 +182,7 @@ notebooks/.css
 
 # RStudio project files
 .Rproj.user/
-.Rproj
+Sentiment-Analysis.Rproj
 
 # LFS config
 .gitattributes
