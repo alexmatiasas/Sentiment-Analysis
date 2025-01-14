@@ -185,6 +185,9 @@ notebooks/*.md
 # LFS config
 .gitattributes
 
+# udpipe model
+english-ewt-ud-2.5-191206.udpipe
+
 # hidden files
 .*
 !.gitignore
