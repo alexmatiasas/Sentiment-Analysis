@@ -51,8 +51,9 @@ library(tidytext)    # Text mining for NLP tasks
 library(ggplot2)     # Data visualization
 library(scales)      # For formatting scales in ggplot2
 library(dplyr)       # Data wrangling
-library(stopwords)  # Stopwords for text analysis
-library(tibble)
+library(stopwords)   # Stopwords for text analysis
+library(tibble)      # Data manipulation
+library(SnowballC)   # Stemming for text analysis
 library(tm)          # Text mining for NLP tasks
 library(wordcloud)   # Word cloud visualization
 library(readr)       # Data reading
@@ -342,7 +343,7 @@ word_counts %>%
   top_n(20, n) %>%
   mutate(word = reorder(word, n), # Esto va dentro de mutate
          color = case_when(       # Esto también va dentro de mutate
-           word == top_word_no_sw ~ "forestgreen",
+           word == top_word_no_sw ~ "orange",
            word == top_word_with_sw ~ "red",
            TRUE ~ "blue"
          )) %>% # Cierra mutate() aquí
@@ -355,10 +356,11 @@ word_counts %>%
   expand_limits(y=c(0, max(word_counts$n) * 1.1)) +
   labs(title = "Top 20 Most Common Words (with Stop Words)", 
        subtitle = paste(" Most common word (with stopwords):", top_word_with_sw, "(in red)\n",
-                        "Most common word (no stopwords):", top_word_no_sw, "(in green)"),
+                        "Most common word (no stopwords):", top_word_no_sw, "(in orange)"),
        x = "Words", y = "Frequency") +
   theme_minimal() +
-  theme(panel.grid.major.y = element_blank(), axis.text.y = element_text(size = 12)) +
+  theme(text = element_text(size = 10, family = "Montserrat")) + 
+  theme(panel.grid.major.y = element_blank(), axis.text.y = element_text(size = 12, family = "Montserrat"), plot.title = element_text(size = 14, face = "bold", family = "Montserrat"), plot.subtitle = element_text(size = 10, face = "italic", family = "Montserrat")) +
   scale_y_continuous(labels = comma)
 ```
 
@@ -392,7 +394,7 @@ word_counts %>%
   anti_join(tibble(word = stopwords("en")), by = "word") %>%
   top_n(20, n) %>%
   mutate(word = reorder(word, n),
-         color = ifelse(row_number() == 1, "forestgreen", "blue")) %>% # Color condicional
+         color = ifelse(row_number() == 1, "orange", "blue")) %>% # Color condicional
   ggplot(aes(x = word, y = n, color = color)) +
   geom_segment(aes(xend = word, yend = 0), size = 1.5) +
   geom_point(size = 4) +
@@ -402,15 +404,22 @@ word_counts %>%
   expand_limits(y = c(0, max_top_word_with_sw * 1.1)) + # Usar el nuevo máximo
   labs(title = "Top 20 Most Common Words (with no stopwords)", x = "Words", y = "Frequency") +
   theme_minimal() +
-  theme(panel.grid.major.y = element_blank(), axis.text.y = element_text(size = 12)) +
+  theme(text = element_text(size = 10, family = "Montserrat")) +
+  theme(panel.grid.major.y = element_blank(), axis.text.y = element_text(size = 12, family = "Montserrat"), plot.title = element_text(size = 14, face = "bold", family = "Montserrat"), plot.subtitle = element_text(size = 10, face = "italic", family = "Montserrat")) +
   scale_y_continuous(labels = comma)
 ```
 
 once we have eliminated the stopwords, we can see the most common words in the reviews are, as we could expect, words like "movie" or "film" which is something obvious, because of the origin of the dataset. Before to proceed with the analysis of the sentiment distribution, we could add one or two more steps to clean the text, like stemming the words or lemmatization of the words.
 
-#### Stemming
+##### Stemming
 
 Stemming is the process of reducing words to their root form, which helps to group together words with similar meanings. We can apply stemming to the tokenized reviews using the `wordStem()` function from the `SnowballC` package.
+
+```{r stemming, warning=FALSE}
+# Stemming the words
+
+```
+
 
 <!-- #### Visualization of the sentiment distribution -->
 
