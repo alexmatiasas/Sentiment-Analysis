@@ -177,6 +177,8 @@ notebooks/*.html
 notebooks/*.nb.html
 notebooks/*.ipynb_checkpoints
 notebooks/*.md
+notebooks/01_EDA_files
+notebooks/.css
 
 # RStudio project files
 .Rproj.user/

@@ -54,6 +54,7 @@ library(dplyr)       # Data wrangling
 library(stopwords)   # Stopwords for text analysis
 library(tibble)      # Data manipulation
 library(SnowballC)   # Stemming for text analysis
+library(udpipe)      # Lemmatization for text analysis
 library(tm)          # Text mining for NLP tasks
 library(wordcloud)   # Word cloud visualization
 library(readr)       # Data reading
@@ -289,6 +290,7 @@ tokenized_reviews <- df %>%
 
 and then, we can see the first 5 rows of the tokenized reviews
 
+<a id="tokenization"></a>
 ```{r data inspection after tokenization, warning=FALSE}
 # Create a static table with the package tibble (included in tidyverse)
 print(as_tibble(tokenized_reviews), n = 5)
@@ -413,12 +415,149 @@ once we have eliminated the stopwords, we can see the most common words in the r
 
 ##### Stemming
 
-Stemming is the process of reducing words to their root form, which helps to group together words with similar meanings. We can apply stemming to the tokenized reviews using the `wordStem()` function from the `SnowballC` package.
+Stemming is the process of reducing words to their root form, which helps to group together words with similar meanings. We can apply stemming to the tokenized reviews using the `wordStem()` function from the `SnowballC` package. This step simplifies the text data and reduces the number of unique words, which can improve the performance of text analysis models this process is not always necessary, but it can help to reduce the number of unique words in the dataset from the same root word, for example, "running" and "run" will be reduced to "run" but may reduce words like "better" to "bet" which may not be useful.
 
 ```{r stemming, warning=FALSE}
 # Stemming the words
+word_counts_stem <- tokenized_reviews %>%
+  anti_join(stop_words_df, by = "word") %>%
+  mutate(word = wordStem(word, language = "en")) %>%
+  count(word, sort = TRUE)
 
+print(as_tibble(word_counts_stem), n = 5)
 ```
+
+and we reduce the number of words from [11 million](#tokenization) to 181,000 words and then we get the next distribution of the words
+
+```{r word frequency analysis after removing stopwords and stemming, warning=FALSE}
+max_top_word_with_sw_stem <- word_counts_stem %>%
+  pull(n) %>%
+  max()
+
+word_counts_stem %>%
+  top_n(20, n) %>%
+  mutate(word = reorder(word, n),
+         color = ifelse(row_number() == 1, "orange", "blue")) %>%
+  ggplot(aes(x = word, y = n, color = color)) +
+  geom_segment(aes(xend = word, yend = 0), size = 1.5) +
+  geom_point(size = 4) +
+  geom_text(aes(label = comma(n), y = n), nudge_y = 50, hjust = -0.3, size=3) +
+  scale_color_identity() +
+  coord_flip() +
+  expand_limits(y = c(0, max_top_word_with_sw_stem * 1.1)) +
+  labs(title = "Top 20 Most Common Words (Stemmed, No Stopwords)", x = "Words", y = "Frequency") +
+  theme_minimal() +
+  theme(text = element_text(size = 10, family = "Montserrat"),
+        panel.grid.major.y = element_blank(), 
+        axis.text.y = element_text(size = 12, family = "Montserrat"), 
+        plot.title = element_text(size = 14, face = "bold", family = "Montserrat"), 
+        plot.subtitle = element_text(size = 10, face = "italic", family = "Montserrat")) +
+  scale_y_continuous(labels = comma)
+```
+
+and as we can observe from these results, some words have been modified and even the top 1 word has increased if we compare it with the previous plot. This is because the words have been reduced to their root form, which groups together words with similar roots, so words like "movie" and "movies" are reduced to "movi".
+
+##### Lemmatization
+
+1. **lemmatize_words()**
+
+Lemmatization is another text normalization technique that reduces words to their base form, based on grammatical rules from the dictionary. Unlike stemming, lemmatization considers the context of the word in the sentence and applies morphological analysis to obtain the root form. We can apply lemmatization to the tokenized reviews using the `lemmatize_words()` function from the `textstem` package.
+
+```{r lemmatization, warning=FALSE}
+# Lemmatization of the words
+word_counts_lemma <- tokenized_reviews %>%
+  anti_join(stop_words_df, by = "word") %>%
+  mutate(word = textstem::lemmatize_words(word)) %>%
+  count(word, sort = TRUE)
+
+print(as_tibble(word_counts_lemma), n = 5)
+```
+
+and then we reduce the number of words from [11 million](#tokenization) to 200,000 words and then we get the next distribution of the words
+
+```{r word frequency analysis after removing stopwords and lemmatization, warning=FALSE}
+max_top_word_with_sw_lemma <- word_counts_lemma %>%
+  pull(n) %>%
+  max()
+
+word_counts_lemma %>%
+  top_n(20, n) %>%
+  mutate(word = reorder(word, n),
+         color = ifelse(row_number() == 1, "orange", "blue")) %>%
+  ggplot(aes(x = word, y = n, color = color)) +
+  geom_segment(aes(xend = word, yend = 0), size = 1.5) +
+  geom_point(size = 4) +
+  geom_text(aes(label = comma(n), y = n), nudge_y = 50, hjust = -0.3, size=3) +
+  scale_color_identity() +
+  coord_flip() +
+  expand_limits(y = c(0, max_top_word_with_sw_lemma * 1.1)) +
+  labs(title = "Top 20 Most Common Words (Lemmatized, No Stopwords)", x = "Words", y = "Frequency") +
+  theme_minimal() +
+  theme(text = element_text(size = 10, family = "Montserrat"),
+        panel.grid.major.y = element_blank(), 
+        axis.text.y = element_text(size = 12, family = "Montserrat"), 
+        plot.title = element_text(size = 14, face = "bold", family = "Montserrat"), 
+        plot.subtitle = element_text(size = 10, face = "italic", family = "Montserrat")) +
+  scale_y_continuous(labels = comma)
+```
+
+and as we can observe from these results, some words have been modified and even the top 1 word has increased if we compare it with the previous plot. This is because the words have been reduced to their base form, which groups together words with similar roots, so words like "movie" and "movies" are reduced to "movie".
+
+2. **udpipe**
+
+But lemmatize_words is a simple way to lemmatize, another way to lemmatize is using the `udpipe` package, which is a more complex way to lemmatize, but it's more accurate.
+
+**note:the model location to load the model in the next chunk of code depends on where it is localized, for example, in my case it was in the root directory so i had to use "../english-ewt-ud-2.5-191206.udpipe" as my .Rmd file is in the directory "notebooks"**
+
+```{r lemmatization_udpipe, warning=FALSE}
+# (Download and) Load the udpipe model
+# udpipe_download_model(language = "english") # Uncomment to download the model
+udmodel <- udpipe_load_model("../english-ewt-ud-2.5-191206.udpipe")
+
+# Lematización con udpipe
+lemma_df <- udpipe(tokenized_reviews$text, udmodel) %>% #lematizacion
+    as_tibble() %>% #convertir a tibble
+    filter(upos %in% c("NOUN", "ADJ", "VERB", "ADV")) %>% #filtrado de palabras
+    select(lemma,sentence) %>% #seleccion de columnas
+    group_by(lemma) %>% #agrupacion por lema
+    count() %>% #conteo
+    arrange(desc(n)) #ordenamiento
+
+print(as_tibble(lemma_df), n = 5)
+```
+
+and the distribution of the model 
+
+```{r }
+# Calcular el máximo DESPUÉS de la lematización
+max_top_word_with_sw_lemma_udpipe <- lemma_df %>%
+  pull(n) %>%
+  max()
+
+# Crear el gráfico con las palabras lematizadas con udpipe
+lemma_df %>%
+  top_n(20, n) %>%
+  mutate(lemma = reorder(lemma, n),
+         color = ifelse(row_number() == 1, "orange", "blue")) %>%
+  ggplot(aes(x = lemma, y = n, color = color)) +
+  geom_segment(aes(xend = lemma, yend = 0), size = 1.5) +
+  geom_point(size = 4) +
+  geom_text(aes(label = comma(n), y = n), nudge_y = 50, hjust = -0.3, size=3) +
+  scale_color_identity() +
+  coord_flip() +
+  expand_limits(y = c(0, max_top_word_with_sw_lemma_udpipe * 1.1)) +
+  labs(title = "Top 20 Most Common Lemmas (udpipe, No Stopwords)", x = "Lemmas", y = "Frequency") +
+  theme_minimal() +
+  theme(text = element_text(size = 10, family = "Montserrat"),
+        panel.grid.major.y = element_blank(),
+        axis.text.y = element_text(size = 12, family = "Montserrat"),
+        plot.title = element_text(size = 14, face = "bold", family = "Montserrat"),
+        plot.subtitle = element_text(size = 10, face = "italic", family = "Montserrat")) +
+  scale_y_continuous(labels = comma)
+```
+
+This last execution is more complex due to the use of the model of language which is more accureta than the function `lemmatize_words()` but consummes a lot of resources. Nevertheless it has support in other languages, besides english.
+
 
 
 <!-- #### Visualization of the sentiment distribution -->
