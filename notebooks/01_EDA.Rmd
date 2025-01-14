@@ -325,18 +325,35 @@ To understand the most common words in the reviews, we perform a word frequency 
 word_counts <- tokenized_reviews %>%
   count(word, sort = TRUE)
 
+# Obtener la palabra más frecuente DESPUÉS de eliminar stop words
+top_word_no_sw <- word_counts %>%
+  anti_join(tibble(word = stopwords("en")), by = "word") %>%
+  top_n(1, n) %>%
+  pull(word)
+
+# Obtener la palabra más frecuente CON stop words (para comparacion y que se vea el top 1 original)
+top_word_with_sw <- word_counts %>%
+  top_n(1, n) %>%
+  pull(word)
+
+
+# --- Gráfico 1: Con stop words, destacando ambas palabras ---
 word_counts %>%
   top_n(20, n) %>%
-  mutate(word = reorder(word, n),
-         color = ifelse(row_number() == 1, "red", "blue")) %>% # Color condicional
+  mutate(word = reorder(word, n), # Esto va dentro de mutate
+         color = case_when(       # Esto también va dentro de mutate
+           word == top_word_no_sw ~ "forestgreen",
+           word == top_word_with_sw ~ "red",
+           TRUE ~ "blue"
+         )) %>% # Cierra mutate() aquí
   ggplot(aes(x = word, y = n, color = color)) +
   geom_segment(aes(xend = word, yend = 0), size = 1.2) +
   geom_point(size = 4) +
   geom_text(aes(label = comma(n), y = n), nudge_y = 50, hjust = -0.3, size=3) +
-  scale_color_identity() + # Importante: usar scale_color_identity()
+  scale_color_identity() +
   coord_flip() +
   expand_limits(y=c(0, max(word_counts$n) * 1.1)) +
-  labs(title = "Top 20 Most Common Words (Con Stop Words)", x = "Words", y = "Frequency") +
+  labs(title = "Top 20 Most Common Words (Con Stop Words, 2 destacados)", x = "Words", y = "Frequency") +
   theme_minimal() +
   theme(panel.grid.major.y = element_blank(), axis.text.y = element_text(size = 12)) +
   scale_y_continuous(labels = comma)
@@ -363,8 +380,7 @@ stop_words_df <- tibble(word = stopwords("en"))
 and then we obtain
 
 ```{r word frequency analysis after removing stopwords, warning=FALSE}
-# Calculating the maximum frequency for the plot after removing stopwords
-max_freq_no_sw <- word_counts %>%
+top_word_with_sw <- word_counts %>%
   anti_join(stop_words_df, by = "word") %>%
   pull(n) %>%
   max()
@@ -373,21 +389,21 @@ word_counts %>%
   anti_join(tibble(word = stopwords("en")), by = "word") %>%
   top_n(20, n) %>%
   mutate(word = reorder(word, n),
-         color = ifelse(row_number() == 1, "red", "blue")) %>% # Color condicional
+         color = ifelse(row_number() == 1, "forestgreen", "blue")) %>% # Color condicional
   ggplot(aes(x = word, y = n, color = color)) +
-  geom_segment(aes(xend = word, yend = 0), size = 1.2) +
+  geom_segment(aes(xend = word, yend = 0), size = 1.5) +
   geom_point(size = 4) +
   geom_text(aes(label = comma(n), y = n), nudge_y = 50, hjust = -0.3, size=3) +
   scale_color_identity() + # Importante: usar scale_color_identity()
   coord_flip() +
-  expand_limits(y = c(0, max_freq_no_sw * 1.1)) + # Usar el nuevo máximo
-  labs(title = "Top 20 Most Common Words (Sin Stop Words)", x = "Words", y = "Frequency") +
+  expand_limits(y = c(0, top_word_with_sw * 1.1)) + # Usar el nuevo máximo
+  labs(title = "Top 20 Most Common Words (with no stopwords)", x = "Words", y = "Frequency") +
   theme_minimal() +
   theme(panel.grid.major.y = element_blank(), axis.text.y = element_text(size = 12)) +
   scale_y_continuous(labels = comma)
 ```
 
-as we can see
+once we have eliminated the stopwords, we can see the most common words in the reviews are, as we could expect, words like "movie" or "film" which is something obvious, because of the origin of the dataset.
 
 <!-- #### Visualization of the sentiment distribution -->
 
