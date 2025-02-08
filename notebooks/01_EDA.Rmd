@@ -616,116 +616,303 @@ This last execution is more complex due to the use of the model of language whic
 
 Another way to analyze the text is by using n-grams, which are sequences of words that appear together in the text. We can analyze the most common n-grams in the reviews to identify common phrases or expressions that may provide insights into the sentiment of the reviews, for example, we could have words like "not" and "good" that together could mean a negative sentiment.
 
+1.- **Bigrams**
+
+Bigrams are n-grams of size 2, which represent pairs of words that appear together in the text. We can extract bigrams from the tokenized reviews using the `unnest_ngrams()` function from the `tidytext` package.
+
+<!-- # ```{r bigrams, warning=FALSE} -->
+<!-- # # Function to Preprocessing and n-grams creation -->
+<!-- # preprocess_and_create_ngrams <- function(df, preprocessing_type, n_gram_size = 2) { # Creation function to preprocess and create n-grams and  -->
+<!-- #   df %>% -->
+<!-- #     anti_join(stop_words_df, by = "word") %>% # Eliminar stop words -->
+<!-- #     {if (preprocessing_type == "stem") mutate(., word = wordStem(word, language = "en")) else .} %>% # Aplicar stemming si es necesario -->
+<!-- #     {if (preprocessing_type == "lemma_textstem") mutate(., word = textstem::lemmatize_words(word)) else .} %>% # Aplicar lematización textstem si es necesario -->
+<!-- #     unnest_ngrams(ngram, word, n = n_gram_size) %>% # Crear n-gramas -->
+<!-- #     {if (n_gram_size > 1) separate(., ngram, paste0("word", 1:n_gram_size), sep = " ") else .} %>% # Separar n-gramas (solo si n > 1) -->
+<!-- #     {if (n_gram_size > 1) unite(., ngram, paste0("word", 1:n_gram_size), sep = " ") else .} %>% # Unir n-gramas (solo si n > 1) -->
+<!-- #     count(review_id, ngram, sort = TRUE) %>% # Contar la frecuencia de los n-gramas -->
+<!-- #     bind_tf_idf(ngram, review_id, n) # Calcular TF-IDF -->
+<!-- # } -->
+<!-- # ``` -->
+
+---
+```{r}
+# Crear bigramas
+bigrams <- reviews_text_udpipe %>%
+  unnest_tokens(bigram, text, token = "ngrams", n = 2) %>%
+  separate(bigram, into = c("word1", "word2"), sep = " ") %>%
+  filter(!word1 %in% stop_words_df$word, !word2 %in% stop_words_df$word) %>%
+  unite(bigram, word1, word2, sep = " ") %>%
+  count(bigram, sort = TRUE)
+
+# Ver los bigramas más comunes
+print(bigrams, n = 10)
+```
+
+In the above chunk of code, we have 
+
+- `unnest_tokens(bigram, text, token = "ngrams", n = 2)` which creates bigrams from the `text` column in `reviews_text_udpipe`, `bigram` is the name of the new column and `token="ngrams"` specifies that we want to create n-grams, with `n=2` indicating bigrams,
+- `separate(bigram, into = c("word1", "word2"), sep = " ")` separates the bigrams into two columns `word1` and `word2` based on the space separator, 
+- `filter(!word1 %in% stop_words_df$word, !word2 %in% stop_words_df$word)` removes stopwords from the bigrams, 
+- `unite(bigram, word1, word2, sep = " ")` combines the two words into a single bigram, and 
+- `count(bigram, sort = TRUE)` calculates the frequency of each bigram.
+
+From this procedure, we can obtain phrases like "special effects" or "ever seen" which could be useful to understand the sentiment of the reviews. We can observe that phrases like "one best" or "waste time" are common in the reviews, which may indicate positive and negative sentiments, respectively, while "special effects" or "ive seen" are neutral phrases that may not provide clear sentiment information.
+
+```{r}
+# Supongamos que tienes un dataframe llamado 'trigrams' con las columnas 'trigrams' y 'n'
+bigrams %>%
+  slice_max(n, n = 10) %>% 
+  mutate(bigram = reorder(bigram, n), 
+         color = ifelse(row_number() == 1, "orange", "blue")) %>% 
+  ggplot(aes(x = bigram, y = n, color = color)) +
+  geom_segment(aes(xend = bigram, yend = 0), size = 1.5) +
+  geom_point(size = 4) +
+  geom_text(aes(label = comma(n), y = n), nudge_y = 50, hjust = -0.3, size = 3) +
+  scale_color_identity() +
+  coord_flip() +
+  expand_limits(y = c(0, max(bigrams$n) * 1.1)) +
+  labs(title = "Top 10 Most Common Bigrams",
+       x = "Bigrams",
+       y = "Frequency") +
+  theme_minimal() +
+  theme(text = element_text(size = 10, family = "Montserrat"),
+        panel.grid.major.y = element_blank(),
+        axis.text.y = element_text(size = 12, family = "Montserrat"),
+        plot.title = element_text(size = 14, face = "bold", family = "Montserrat"),
+        plot.subtitle = element_text(size = 10, face = "italic", family = "Montserrat")) +
+  scale_y_continuous(labels = comma)
+```
+
+In this plot, we can see the most common bigrams in the reviews, sorted by frequency. The visualization provides insights into common phrases and expressions used in the reviews, which may help identify patterns and sentiments in the text data.
+
+2.- **Trigrams**
+
+
+```{r}
+# Crear bigramas
+trigrams <- reviews_text_udpipe %>%
+  unnest_tokens(trigrams, text, token = "ngrams", n = 3) %>%
+  separate(trigrams, into = c("word1", "word2", "word3"), sep = " ") %>%
+  filter(!word1 %in% stop_words_df$word, !word2 %in% stop_words_df$word, !word3 %in% stop_words_df$word) %>%
+  unite(trigrams, word1, word2, word3, sep = " ") %>%
+  count(trigrams, sort = TRUE)
+
+# Ver los bigramas más comunes
+print(trigrams, n = 10)
+```
+
+in this case, we can see that the most common trigram is "ive ever seen" which is something that could be expected due to the origin of the dataset, but we can see that there are other trigrams like "worst movie ever" or "dont waste time" which could be useful to understand the sentiment of the reviews. 
+
+```{r}
+# Supongamos que tienes un dataframe llamado 'trigrams' con las columnas 'trigrams' y 'n'
+trigrams %>%
+  slice_max(n, n = 10) %>%  # Seleccionar los 10 trigramas más comunes
+  mutate(trigrams = reorder(trigrams, n),
+         color = ifelse(row_number() == 1, "orange", "blue")) %>%
+  ggplot(aes(x = trigrams, y = n, color = color)) +
+  geom_segment(aes(xend = trigrams, yend = 0), size = 1.5) +
+  geom_point(size = 4) +
+  geom_text(aes(label = comma(n), y = n), nudge_y = 10, hjust = -0.3, size = 3) +
+  scale_color_identity() +
+  coord_flip() +
+  expand_limits(y = c(0, max(trigrams$n) * 1.1)) +
+  labs(title = "Top 10 Most Common Trigrams",
+       x = "Trigrams",
+       y = "Frequency") +
+  theme_minimal() +
+  theme(text = element_text(size = 10, family = "Montserrat"),
+        panel.grid.major.y = element_blank(),
+        axis.text.y = element_text(size = 12, family = "Montserrat"),
+        plot.title = element_text(size = 14, face = "bold", family = "Montserrat"),
+        plot.subtitle = element_text(size = 10, face = "italic", family = "Montserrat")) +
+  scale_y_continuous(labels = comma)
+```
+
+In this plot, we can see the most common trigrams in the reviews, sorted by frequency. The visualization provides insights into common phrases and expressions used in the reviews, which may help identify patterns and sentiments in the text data.
+
+3.- **Tetragrams**
+
+```{r}
+# Crear bigramas
+tetragrams <- reviews_text_udpipe %>%
+  unnest_tokens(tetragrams, text, token = "ngrams", n = 4) %>%
+  separate(tetragrams, into = c("word1", "word2", "word3", "word4"), sep = " ") %>%
+  filter(!word1 %in% stop_words_df$word, !word2 %in% stop_words_df$word, !word3 %in% stop_words_df$word, !word4 %in% stop_words_df$word) %>%
+  unite(tetragrams, word1, word2, word3, word4, sep = " ") %>%
+  count(tetragrams, sort = TRUE)
+
+# Ver los bigramas más comunes
+print(tetragrams, n = 10)
+```
+
+from these results, we have phrases like "one worst movies ever" or "worst movie ever seen" which could be useful to understand the sentiment of the reviews, also these kind of expressions are basically the same but with different words, so we could reduce the number of unique words in the dataset. As we observe, these reviews have the repetition of the word "worst" which suggest that the reviews are negative.
+
+```{r}
+# Supongamos que tienes un dataframe llamado 'trigrams' con las columnas 'trigrams' y 'n'
+tetragrams %>%
+  slice_max(n, n = 10) %>%  # Seleccionar los 10 trigramas más comunes
+  mutate(tetragrams = reorder(tetragrams, n),
+         color = ifelse(row_number() == 1, "orange", "blue")) %>%
+  ggplot(aes(x = tetragrams, y = n, color = color)) +
+  geom_segment(aes(xend = tetragrams, yend = 0), size = 1.5) +
+  geom_point(size = 4) +
+  geom_text(aes(label = comma(n), y = n), nudge_y = 10, hjust = 0.3, size = 3) +
+  scale_color_identity() +
+  coord_flip() +
+  expand_limits(y = c(0, max(tetragrams$n) * 1)) +
+  labs(title = "Top 10 Most Common Tetragrams",
+       x = "Tetragrams",
+       y = "Frequency") +
+  theme_minimal() +
+  theme(text = element_text(size = 10, family = "Montserrat"),
+        panel.grid.major.y = element_blank(),
+        axis.text.y = element_text(size = 12, family = "Montserrat"),
+        plot.title = element_text(size = 14, face = "bold", family = "Montserrat"),
+        plot.subtitle = element_text(size = 10, face = "italic", family = "Montserrat")) +
+  scale_y_continuous(labels = comma)
+```
+
+In the above plot, we can observe that the most common expressions are similar and seems to express negative sentiments, with phrases like "one worst movies ever" or "worst movie ever seen" being repeated in the reviews. These expressions suggest that the reviews are negative and provide insights into the sentiment of the reviewers.
+
+4.- **Pentagrams**
+
+```{r}
+# Crear bigramas
+pentagrams <- reviews_text_udpipe %>%
+  unnest_tokens(pentagrams, text, token = "ngrams", n = 5) %>%
+  separate(pentagrams, into = c("word1", "word2", "word3", "word4", "word5"), sep = " ") %>%
+  filter(!word1 %in% stop_words_df$word, !word2 %in% stop_words_df$word, !word3 %in% stop_words_df$word, !word4 %in% stop_words_df$word, !word5 %in% stop_words_df$word) %>%
+  unite(pentagrams, word1, word2, word3, word4, word5, sep = " ") %>%
+  count(pentagrams, sort = TRUE)
+
+# Ver los bigramas más comunes
+print(pentagrams, n = 10)
+```
+
+these results seems similar to the tetragrams, with expressions like "one worst movies ever seen" or "worst movie ive ever seen" and when we compare with the tetragrams, we can observe that these expressions are basically the same, but with a redundant word like "seen" or "ive" which could be removed to reduce the number of unique words in the dataset.
+
+```{r}
+# Supongamos que tienes un dataframe llamado 'trigrams' con las columnas 'trigrams' y 'n'
+pentagrams %>%
+  slice_max(n, n = 10) %>%  # Seleccionar los 10 trigramas más comunes
+  mutate(pentagrams = reorder(pentagrams, n),
+         color = ifelse(row_number() == 1, "orange", "blue")) %>%
+  ggplot(aes(x = pentagrams, y = n, color = color)) +
+  geom_segment(aes(xend = pentagrams, yend = 0), size = 1.5) +
+  geom_point(size = 4) +
+  geom_text(aes(label = comma(n), y = n), nudge_y = 3, hjust = -0.3, size = 3) +
+  scale_color_identity() +
+  coord_flip() +
+  expand_limits(y = c(0, max(pentagrams$n) * 1.1)) +
+  labs(title = "Top 10 Most Common Pentagrams",
+       x = "Pentagrams",
+       y = "Frequency") +
+  theme_minimal() +
+  theme(text = element_text(size = 10, family = "Montserrat"),
+        panel.grid.major.y = element_blank(),
+        axis.text.y = element_text(size = 12, family = "Montserrat"),
+        plot.title = element_text(size = 14, face = "bold", family = "Montserrat"),
+        plot.subtitle = element_text(size = 10, face = "italic", family = "Montserrat")) +
+  scale_y_continuous(labels = comma)
+```
+
+In the above plot, we can observe that the most common expressions are similar to the tetragrams, with phrases like "one worst movies ever seen" or "worst movie ive ever seen" being repeated in the reviews. These expressions are not likely to provide extra information for our dataset, so we could stop at the tetragrams analysis due to the redundancy of the expressions.
+
+---
+
+### Sentiment Distribution
+
+We continue with the analysis of the sentiment distribution, which is important to understand the balance of the dataset and the distribution of positive and negative reviews.
+
+
+1.- **By word**
+
+- **No stopwords**
+Starting from the `tokenized_reviews` dataframe, we can count the frequency of each word and visualize the distribution of the sentiment by word. This analysis helps to identify the most common words associated with positive and negative sentiments in the reviews.
+
+```{r counting sentiments by word (no stopwords), warning=FALSE}
+# Stemming y conteo por sentimiento
+word_counts_sentiment <- tokenized_reviews %>%
+  anti_join(stop_words_df, by = "word") %>%
+  count(word, sentiment, sort = TRUE) %>%
+  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>%
+  rename(negative = negative, positive = positive) %>%
+  mutate(total = positive + negative,
+         prop_positive = positive / total,
+         prop_negative = negative / total)
+
+# Mostrar las 5 palabras más frecuentes
+print(as_tibble(word_counts_sentiment), n = 10)
+```
+
+
+in the above chunk of code, we have the top 10 words with their sentiment distribution, we can see that the word "movie" has a higher proportion of negative sentiment, while the word "film" has a higher proportion of positive sentiment. This analysis provides insights into the sentiment distribution of the most common words in the reviews.
+
+```{r lollipot plot of the sentiment distribution by word (no stopwords), warning=FALSE}
+word_counts_sentiment %>%
+  filter(total > 20) %>%  # Filtrar palabras con suficiente frecuencia
+  mutate(sentiment = ifelse(positive > negative, "positive", "negative"),
+         word = reorder(word, total)) %>%
+  slice_max(total, n = 10) %>% 
+  ggplot(aes(x = word, y = total, color = sentiment)) +
+  geom_segment(aes(xend = word, yend = 0), size = 1.5) +
+  geom_point(size = 4) +
+  coord_flip() +
+  labs(title = "Top 10 Most Frequent Words by Sentiment",
+       x = "Words",
+       y = "Frequency") +
+  scale_color_manual(values = c("positive" = "blue", "negative" = "red")) +
+  theme_minimal()
+```
+but this has a problem, we have not considered that some reviews are larger than other reviews, so we need to consider the length of the reviews to have a better understanding of the sentiment distribution. For example, what if the word "movie" appears in a review with 100 words with negative sentiment, while the word "film" appears in a review with 10 words with positive sentiment, this could affect the sentiment distribution of the words. To do this, we could calculate the relative frequency of each word by the length of the reviews.
+
+$$
+\text{Relative Frequency} = \frac{\text{Frequency of the word}}{\text{Total number of words in the reviews}}
+$$
+
+```{r counting sentiments by word using (no stopwords) relative to their length, warning=FALSE}
+# Contar cuántas veces aparece cada palabra en cada sentimiento
+word_counts_sentiment <- tokenized_reviews %>%
+  anti_join(stop_words_df, by = "word") %>%
+  mutate(word = wordStem(word, language = "en")) %>%
+  count(word, sentiment) %>%
+  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>%  # Consolidar en una sola fila
+  rename(negative = negative, positive = positive)
+
+# Calcular la frecuencia relativa de cada palabra en su categoría
+word_counts_sentiment <- word_counts_sentiment %>%
+  mutate(freq_negative = negative / sum(negative),
+         freq_positive = positive / sum(positive))
+
+# Mostrar las 5 palabras más frecuentes con frecuencia normalizada
+print(as_tibble(word_counts_sentiment), n = 5)
+```
+
+in this code chunk, we have the top 5 words with their sentiment distribution relative to the length of the reviews, we can see that the word "movie" has a higher proportion of negative sentiment, while the word "film" has a higher proportion of positive sentiment. This analysis provides insights into the sentiment distribution of the most common words in the reviews, considering the length of the reviews.
+
+
+
+- *Stemming*
+
+
+```{r counting sentiments by word using (no stopwords), warning=FALSE}
+# Stemming y conteo por sentimiento
+word_counts_stem_sentiment <- tokenized_reviews %>%
+  anti_join(stop_words_df, by = "word") %>%
+  mutate(word = wordStem(word, language = "en")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>%
+  rename(negative = negative, positive = positive) %>%
+  mutate(total = positive + negative,
+         prop_positive = positive / total,
+         prop_negative = negative / total)
+
+# Mostrar las 5 palabras más frecuentes
+print(as_tibble(word_counts_stem_sentiment), n = 5)
+```
+
+
 
 #### Term Frequency - Inverse document frequency (TF-IDF) Analysis
 
-<!-- #### Visualization of the sentiment distribution -->
-
-<!-- To understand the distribution of sentiments, we use a bar plot to visualize the count of each sentiment class. This visualization allows us to quickly assess whether the dataset is balanced, which is important for building an effective classification model. -->
-
-<!-- ```{r plotting sentiment distribution, warning=FALSE} -->
-<!-- library(ggplot2) -->
-<!-- ggplot(df, aes(x = sentiment)) + -->
-<!--   geom_bar(fill = "skyblue", color = "black") + -->
-<!--   geom_text(stat='count', aes(label=..count..), vjust=2) + -->
-<!--   ggtitle("Sentiment Distribution") + -->
-<!--   xlab("Sentiment") + -->
-<!--   ylab("") + -->
-<!--   theme_minimal() + -->
-<!--   theme( -->
-<!--     plot.title = element_text(hjust = 0.5, size = 15, face = "bold"), -->
-<!--     axis.title.x = element_text(size = 12), -->
-<!--     axis.title.y = element_text(size = 12) -->
-<!--   ) -->
-<!-- ``` -->
-
-<!-- From the plot, we observe that the dataset has equal number of positive and negative reviews. This balance is ideal for our sentiment analysis model, as it reduces the risk of bias toward one class during training. -->
-
-<!-- #### Analysis of the review length -->
-
-<!-- Adding a new column of each review and visualizing their distribution -->
-
-<!-- ```{r} -->
-<!-- library(dplyr) -->
-<!-- df <- df %>% -->
-<!--   mutate(review_length = nchar(review)) -->
-
-
-<!-- ggplot(df, aes(x = review_length)) + -->
-<!--   geom_histogram(binwidth = 10, fill = "steelblue") + -->
-<!--   ggtitle("Lenght Distribution of reviews") + -->
-<!--   xlab("Lenght of the reviews") + -->
-<!--   ylab("") + -->
-<!--   theme_minimal() + -->
-<!--   theme( -->
-<!--     plot.title = element_text(hjust = 0.5, size = 15, face = "bold"), -->
-<!--     axis.title.x = element_text(size = 12), -->
-<!--     axis.title.y = element_text(size = 12) -->
-<!--   ) -->
-<!-- ``` -->
-
-<!-- #### Frecuent words and wordcloud -->
-
-<!-- Using the library `tm` for the preprocessing of the text and generate a wordcloud. -->
-
-<!-- ```{r frecuent words and wordcloud, warning=FALSE} -->
-<!-- library(tm) -->
-<!-- library(wordcloud) -->
-<!-- library(RColorBrewer) -->
-
-<!-- # Crear un Corpus -->
-<!-- corpus <- Corpus(VectorSource(df$review)) -->
-<!-- corpus <- tm_map(corpus, content_transformer(tolower)) -->
-<!-- corpus <- tm_map(corpus, removePunctuation) -->
-<!-- corpus <- tm_map(corpus, removeWords, stopwords("english")) -->
-
-<!-- # Generar la Nube de Palabras -->
-<!-- set.seed(1234) # Para reproducibilidad -->
-<!-- wordcloud(corpus,  -->
-<!--           max.words = 100,  -->
-<!--           random.order = FALSE,  -->
-<!--           colors = brewer.pal(8, "Paired"), -->
-<!--           scale = c(3, 0.5), -->
-<!--           rot.per = 0.35,  -->
-<!--           use.r.layout = FALSE) -->
-
-<!-- # Añadir título y fondo claro -->
-<!-- title("Word Cloud of Sentiments", col.main = "black", font.main = 4) -->
-
-<!-- # Mostrar leyenda (opcional) -->
-<!-- # legend("topright", legend = "Most frequent words", col = "blue", cex = 0.8, text.col = "blue") -->
-
-<!-- ``` -->
-
-<!-- #### Statistical analysis and modeling -->
-
-<!-- ##### Statistical tests   -->
-
-<!-- Performing statistical tests -->
-
-<!-- ```{r} -->
-<!-- t.test(review_length ~ sentiment, data = df) -->
-<!-- ``` -->
-
-<!-- ##### Basic statistical model -->
-
-<!-- Exploring some initial models. -->
-
-<!-- ```{r} -->
-<!-- # Verificar los valores únicos en sentiment -->
-<!-- unique(df$sentiment) -->
-
-<!-- # Convertir sentiment a una variable binaria -->
-<!-- df$sentiment_binary <- ifelse(df$sentiment == "positive", 1, 0) -->
-
-<!-- # Crear la columna review_length con la longitud de cada reseña -->
-<!-- df$review_length <- nchar(df$review) -->
-
-<!-- # Ajustar el modelo logístico -->
-<!-- glm_model <- glm(sentiment_binary ~ review_length, data = df, family = "binomial") -->
-<!-- summary(glm_model) -->
-<!-- #summary(glm_model) -->
-<!-- ``` -->
-<!-- ### 2nd dataset -->
-
-<!-- ### 3rd dataset --> 
