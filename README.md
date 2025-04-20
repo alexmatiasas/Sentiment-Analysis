@@ -1,95 +1,60 @@
-**# Sentiment-Analysis
+# 🎭 Sentiment Analysis on IMDb Reviews
 
-Sentiment Analysis and Natural Language Processing
+This project applies Natural Language Processing (NLP) techniques to classify movie reviews from IMDb into **positive** or **negative** sentiment categories. It follows a two-phase approach:
 
-Objetivo: Crear un modelo que pueda clasificar reseñas de productos en positivo, negativo o neutral, usando análisis de sentimiento.
+- 🔍 **Phase 1**: Text preprocessing and exploratory analysis using **R and tidyverse** libraries.
+- 🤖 **Phase 2** _(in progress)_: Sentiment classification models in **Python** using Scikit-learn and PyTorch.
 
-Paso a Paso
+## 📁 Dataset
 
-1. Definición del Problema y Recolección de Datos
-   •	Objetivo: Crear un clasificador de sentimiento basado en reseñas de productos.
-   •	Datos: Puedes usar datasets de reseñas, como el de Amazon o Yelp, disponibles en Kaggle, UCI Machine Learning Repository, o datasets de Hugging Face.
-2. Exploración de Datos y Limpieza
-   •	Realiza un análisis exploratorio inicial para entender la distribución de las clases (positivo, negativo, neutral).
-   •	Limpieza de Texto:
-   •	Convierte el texto a minúsculas, elimina signos de puntuación, URLs y caracteres especiales.
-   •	Tokenización: Divide el texto en palabras individuales.
-   •	Stop Words: Elimina palabras irrelevantes (como “el”, “de”, “un”).
-3. Preprocesamiento Avanzado
-   •	Vectorización: Usa CountVectorizer o TF-IDF para convertir texto a valores numéricos.
-   •	Embeddings: Para mejorar el desempeño, usa embeddings preentrenados como Word2Vec o GloVe.
-   •	Modelo Transformer (opcional): Si deseas un enfoque más avanzado, utiliza modelos preentrenados como BERT de Hugging Face.
-4. Entrenamiento del Modelo
-   •	Prueba varios modelos, como Naive Bayes, Support Vector Machines (SVM) y Redes Neuronales.
-   •	Compara el desempeño de los modelos usando métricas como accuracy, precision, recall y f1-score.
-5. Evaluación y Mejora
-   •	Evalúa el modelo usando una matriz de confusión y métricas de clasificación.
-   •	Optimización de hiperparámetros: Usa técnicas como Grid Search o Random Search para mejorar el rendimiento.
-6. Despliegue y Visualización
-   •	Crea un API con Flask o FastAPI para recibir texto como entrada y devolver el sentimiento.
-   •	Crea un dashboard interactivo (usando Plotly Dash o Streamlit) para mostrar visualmente las predicciones y métricas.
+- [IMDb Reviews Dataset (Kaggle)](https://www.kaggle.com/datasets/lakshmi25npathi/imdb-dataset-of-50k-movie-reviews)
+- 50,000 reviews labeled as **positive** or **negative**.
 
-<!-- •	El archivo README es la guía principal del proyecto y debe incluir:
-	•	Descripción del Proyecto: Explica el objetivo y los problemas que resuelve.
-	•	Estructura del Proyecto: Describe el contenido de cada carpeta y archivo.
-	•	Instrucciones de Instalación: Describe cómo instalar las dependencias usando requirements.txt.
-	•	Uso del Proyecto: Explica cómo usar la API y el dashboard.
-	•	Ejemplos de Ejecución: Muestra ejemplos de entrada/salida de la API y cómo interpretar los resultados del dashboard. -->
+## 📌 Project Phases
 
-<!-- b) Desarrollo en Ramas para Cada Funcionalidad
+### 🧪 Phase 1: Text Processing in R
 
-	1.	Crear Ramas de Funcionalidades:
-	•	Cada funcionalidad (EDA, preprocesamiento, modelado, API) debe desarrollarse en una rama propia para mantener los cambios organizados. -->
+- Text cleaning: lowercasing, stopword removal, HTML cleanup
+- Tokenization and lemmatization
+- POS tagging with `udpipe`
+- Visualization: word clouds, bar charts, n-gram analysis
+- 📈 [Full EDA Notebook on RPubs](LINK_AQUI)
 
-<!-- 4. Subida del Proyecto a la Nube y Documentación Final
+### 🧠 Phase 2: Modeling in Python _(Coming Soon)_
 
-	1.	Sube la API en la Nube:
-	•	Usa Google Cloud Run o Heroku para alojar la API. Recuerda que si usas Docker, necesitarás un archivo Dockerfile.
-	2.	Actualización de Documentación en GitHub:
-	•	En el README, incluye instrucciones detalladas de cómo ejecutar la API y el dashboard en un entorno local y en la nube, así como enlaces a la API si está disponible públicamente.
-	3.	Publicación de Notebooks de Análisis en Google Colab o nbviewer:
-	•	Publica los notebooks en Google Colab o usa nbviewer para hacerlos accesibles y agregar enlaces en el README. -->
+- Data exported as `IMDB-cleaned.csv`
+- Model candidates:
+  - Logistic Regression
+  - Naive Bayes
+  - Support Vector Machines
+  - PyTorch-based classifier
+- Metrics: Accuracy, F1-score, ROC-AUC
 
-## Paso 1: Definición del Problema y Recopilación de Datos
+## 📦 Deliverables
 
-1. Definir el objetivo:
+- `sentiment-analysis.Rmd`: Full EDA notebook in R
+- `IMDB-cleaned.csv`: Preprocessed dataset
+- `model_sentiment.py`: Sentiment classification model (planned)
+- Streamlit / Flask deployment (planned)
 
-- Queremos que el modelo clasifique una reseña en tres categorías: positivo, negativo o neutral.
-- Ejemplo de uso: una empresa podría usar este modelo para monitorear la satisfacción del cliente en tiempo real.
+## 🚀 Deployment Ideas
 
-2. Obtén los datos:
+- Build an interactive dashboard (Streamlit)
+- Deploy a REST API using FastAPI
+- (Optional) Real-time batch sentiment processing with Apache Spark
 
-- Usaremos datasets que contengan reseñas etiquetadas. Ejemplos incluyen:
-  - Amazon Customer Reviews en Kaggle.
-  - Yelp Review Dataset.
-  - IMDb Movie Reviews.
+## 📚 Skills & Tools Used
 
-3. Explora el dataset y define el flujo de procesamiento de datos:
+- R: `tidyverse`, `tidytext`, `udpipe`, `ggplot2`, `SnowballC`
+- Python: `scikit-learn`, `NLTK`, `PyTorch` (planned)
+- EDA & Reporting: R Markdown, RPubs
 
-- Carga el dataset y visualiza las primeras filas.
-- Identifica las columnas importantes: texto de la reseña y etiqueta (positiva, negativa, neutral).
+## 🧠 Author
 
-Código para explorar el dataset:
+**Manuel Alejandro Matías Astorga**  
+Data Scientist | Physicist | Machine Learning Enthusiast  
+📄 [Portfolio Website](https://alexmatiasas.github.io) · [LinkedIn](https://linkedin.com/in/alexmatiasastorga)
 
-```Python
-import pandas as pd
+---
 
-# Cargar el dataset
-df = pd.read_csv("reviews.csv")  # Cambia esto a tu dataset
-
-# Ver las primeras filas
-print(df.head())
-
-# Información general sobre el dataset
-print(df.info())
-```
-
-## Paso 2: Exploración y Limpieza de Datos
-
-1. Exploración de datos:
-
-- Analiza la distribución de clases (positivo, negativo, neutral). Esto te ayudará a identificar si el dataset está balanceado o si será necesario algún ajuste.
-
-```Python
-print(df['sentiment'].value_counts())  # Ver distribución de clases
-```
+> ✨ Feel free to fork, contribute or reach out if you're working on similar projects!

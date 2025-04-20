@@ -97,10 +97,6 @@ Each row in the dataset represents a movie review with two main columns:
 | "One of the other reviewers has mentioned that after watching just 1 Oz episode you'll be hooked." | positive |
 | "A wonderful little production. The filming technique is very unassuming- very old-time-B..." | positive |
 
-</dd>
-
-</dl>
-
 We will start by loading the dataset using the `read_csv` function from `readr`.
 
 ```{r loading data, message=FALSE, warning=FALSE}
@@ -211,7 +207,7 @@ df$review <- stringr::str_replace_all(df$review, "<.*?>", "")
   - `.*?` matches any character (except for line terminators) as few times as possible. The `?` makes the `.*` lazy (or not greedy), so it matches as few characters as possible. This is important to avoid removing the entire text between two tags.
   - `>` matches the character `>` literally (case sensitive).
   
-**Note: if we'd missed the `?` in `.*?`, it would have been greedy and would have removed the entire text between the first `<` and the last `>` in the string.**
+**NOTE: IF WE'D MISSED THE `?` IN `.*?`, IT WOULD HAVE BEEN GREEDY AND WOULD HAVE REMOVED THE ENTIRE TEXT BETWEEN THE FIRST `<` AND THE LAST `>` IN THE STRING.**
 
 The above code uses the `str_replace_all` function from the `stringr` package to remove all HTML tags from the `review` column, `"<.*?>"` is a regular expression that matches any HTML tag and is replaced by an empty string `""`. This step is essential for cleaning the text data and preparing it for further analysis.
 
@@ -310,17 +306,6 @@ The tokenization process has split each review into individual words, creating a
 
 In this section, we will analyze the distribution of the `sentiment` variable in the IMDB dataset. Understanding the distribution of sentiment is essential for assessing class balance, which can impact model performance. Additionally, we will examine basic descriptive statistics and structural information to ensure that the data aligns with our modeling requirements.
 
-<!-- #### Exploration of the structure and descriptive statistics -->
-
-<!-- We start by examining the structure of the dataset using `str()`, which provides an overview of column names, types, and data samples. Additionally, we use `summary()` to obtain descriptive statistics, allowing us to identify any potential issues, such as missing values or anomalies. -->
-
-<!-- ```{r exploration of the structure and descriptive statistics} -->
-<!-- str(df) -->
-<!-- summary(df) -->
-<!-- ``` -->
-
-<!-- The structure output confirms that the dataset consists of 50,000 rows and 2 columns: review and sentiment. The review column is of type character, containing text data, while the sentiment column is a factor, with levels “positive” and “negative”. This aligns with our expectation for binary sentiment classification. -->
-
 #### Word Frequency Analysis
 
 To understand the most common words in the reviews, we perform a word frequency analysis. This analysis helps identify the most frequent words used in the reviews, providing insights into the language patterns and topics discussed in the dataset.
@@ -371,8 +356,6 @@ word_counts %>%
 The lollipop chart above displays the most common words in the reviews, sorted by frequency. The visualization provides insights into the language patterns and topics discussed in the dataset.
 
 As we can see in the plot, the most frequent words include common English words like "the," "and," "a," and "of," which are known as stopwords. These words are essential for sentence structure but may not provide meaningful insights for sentiment analysis. We will address this issue by removing stopwords in the next step.
-
-<!-- **note: using reorder in each part of the construction of the plot, from aes() function is not recommendable, but it's just to show another way to construct the plot. In the next section, we'll make the plot using mutate() which is more efficient.** -->
 
 #### Removing Stopwords
 
@@ -543,7 +526,7 @@ reviews_text_udpipe <- tokenized_reviews %>%
 ```
 
 
-**note:the model location to load the model in the next chunk of code depends on where it is localized, for example, in my case it was in the root directory so i had to use "../english-ewt-ud-2.5-191206.udpipe" as my .Rmd file is in the directory "notebooks"**
+**NOTE:THE MODEL LOCATION TO LOAD THE MODEL IN THE NEXT CHUNK OF CODE DEPENDS ON WHERE IT IS LOCALIZED, FOR EXAMPLE, IN MY CASE IT WAS IN THE ROOT DIRECTORY SO I HAD TO USE "../english-ewt-ud-2.5-191206.udpipe" AS MY .Rmd FILE IS IN THE DIRECTORY "notebooks"**
 
 ```{r lemmatization_udpipe, warning=FALSE}
 # (Download and) Load the udpipe model
@@ -620,22 +603,6 @@ Another way to analyze the text is by using n-grams, which are sequences of word
 
 Bigrams are n-grams of size 2, which represent pairs of words that appear together in the text. We can extract bigrams from the tokenized reviews using the `unnest_ngrams()` function from the `tidytext` package.
 
-<!-- # ```{r bigrams, warning=FALSE} -->
-<!-- # # Function to Preprocessing and n-grams creation -->
-<!-- # preprocess_and_create_ngrams <- function(df, preprocessing_type, n_gram_size = 2) { # Creation function to preprocess and create n-grams and  -->
-<!-- #   df %>% -->
-<!-- #     anti_join(stop_words_df, by = "word") %>% # Eliminar stop words -->
-<!-- #     {if (preprocessing_type == "stem") mutate(., word = wordStem(word, language = "en")) else .} %>% # Aplicar stemming si es necesario -->
-<!-- #     {if (preprocessing_type == "lemma_textstem") mutate(., word = textstem::lemmatize_words(word)) else .} %>% # Aplicar lematización textstem si es necesario -->
-<!-- #     unnest_ngrams(ngram, word, n = n_gram_size) %>% # Crear n-gramas -->
-<!-- #     {if (n_gram_size > 1) separate(., ngram, paste0("word", 1:n_gram_size), sep = " ") else .} %>% # Separar n-gramas (solo si n > 1) -->
-<!-- #     {if (n_gram_size > 1) unite(., ngram, paste0("word", 1:n_gram_size), sep = " ") else .} %>% # Unir n-gramas (solo si n > 1) -->
-<!-- #     count(review_id, ngram, sort = TRUE) %>% # Contar la frecuencia de los n-gramas -->
-<!-- #     bind_tf_idf(ngram, review_id, n) # Calcular TF-IDF -->
-<!-- # } -->
-<!-- # ``` -->
-
----
 ```{r}
 # Crear bigramas
 bigrams <- reviews_text_udpipe %>%
@@ -819,33 +786,32 @@ pentagrams %>%
 
 In the above plot, we can observe that the most common expressions are similar to the tetragrams, with phrases like "one worst movies ever seen" or "worst movie ive ever seen" being repeated in the reviews. These expressions are not likely to provide extra information for our dataset, so we could stop at the tetragrams analysis due to the redundancy of the expressions.
 
----
-
 ### Sentiment Distribution
 
 We continue with the analysis of the sentiment distribution, which is important to understand the balance of the dataset and the distribution of positive and negative reviews.
 
-
 1.- **By word**
 
 - **No stopwords**
+
 Starting from the `tokenized_reviews` dataframe, we can count the frequency of each word and visualize the distribution of the sentiment by word. This analysis helps to identify the most common words associated with positive and negative sentiments in the reviews.
 
 ```{r counting sentiments by word (no stopwords), warning=FALSE}
-# Stemming y conteo por sentimiento
+# Filtrar stopwords y palabras con caracteres extraños
 word_counts_sentiment <- tokenized_reviews %>%
-  anti_join(stop_words_df, by = "word") %>%
-  count(word, sentiment, sort = TRUE) %>%
-  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>%
+  anti_join(stop_words_df, by = "word") %>%  # Quitar stopwords
+  filter(str_detect(word, "^[a-zA-Z]+$")) %>%  # Solo palabras alfabéticas
+  group_by(word, sentiment) %>%
+  summarise(count = n(), .groups = "drop") %>%  # Contar palabras por sentimiento
+  pivot_wider(names_from = sentiment, values_from = count, values_fill = 0) %>%  # Convertir en columnas
   rename(negative = negative, positive = positive) %>%
-  mutate(total = positive + negative,
-         prop_positive = positive / total,
-         prop_negative = negative / total)
+  filter(negative + positive > 10) %>%  # Filtrar palabras con muy baja frecuencia
+  arrange(desc(negative + positive))  # Ordenar por frecuencia total
 
-# Mostrar las 5 palabras más frecuentes
+# Verificar resultados
 print(as_tibble(word_counts_sentiment), n = 10)
 ```
-
+47490+36019= 83509
 
 in the above chunk of code, we have the top 10 words with their sentiment distribution, we can see that the word "movie" has a higher proportion of negative sentiment, while the word "film" has a higher proportion of positive sentiment. This analysis provides insights into the sentiment distribution of the most common words in the reviews.
 
