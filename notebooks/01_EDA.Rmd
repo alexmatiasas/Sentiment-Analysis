@@ -4,8 +4,8 @@ subtitle: "Data science portfolio"
 author: "Manuel Alejandro Matías Astorga"
 date: "2024"
 output: 
-  prettydoc::html_pretty:
-  # html_document:
+  # prettydoc::html_pretty:
+  html_document:
     theme: yeti
     highlight: tango
     toc: true
@@ -815,70 +815,70 @@ print(as_tibble(word_counts_sentiment), n = 10)
 
 in the above chunk of code, we have the top 10 words with their sentiment distribution, we can see that the word "movie" has a higher proportion of negative sentiment, while the word "film" has a higher proportion of positive sentiment. This analysis provides insights into the sentiment distribution of the most common words in the reviews.
 
-```{r lollipot plot of the sentiment distribution by word (no stopwords), warning=FALSE}
-word_counts_sentiment %>%
-  filter(total > 20) %>%  # Filtrar palabras con suficiente frecuencia
-  mutate(sentiment = ifelse(positive > negative, "positive", "negative"),
-         word = reorder(word, total)) %>%
-  slice_max(total, n = 10) %>% 
-  ggplot(aes(x = word, y = total, color = sentiment)) +
-  geom_segment(aes(xend = word, yend = 0), size = 1.5) +
-  geom_point(size = 4) +
-  coord_flip() +
-  labs(title = "Top 10 Most Frequent Words by Sentiment",
-       x = "Words",
-       y = "Frequency") +
-  scale_color_manual(values = c("positive" = "blue", "negative" = "red")) +
-  theme_minimal()
-```
-but this has a problem, we have not considered that some reviews are larger than other reviews, so we need to consider the length of the reviews to have a better understanding of the sentiment distribution. For example, what if the word "movie" appears in a review with 100 words with negative sentiment, while the word "film" appears in a review with 10 words with positive sentiment, this could affect the sentiment distribution of the words. To do this, we could calculate the relative frequency of each word by the length of the reviews.
+<!-- # ```{r lollipot plot of the sentiment distribution by word (no stopwords), warning=FALSE} -->
+<!-- # word_counts_sentiment %>% -->
+<!-- #   filter(total > 20) %>%  # Filtrar palabras con suficiente frecuencia -->
+<!-- #   mutate(sentiment = ifelse(positive > negative, "positive", "negative"), -->
+<!-- #          word = reorder(word, total)) %>% -->
+<!-- #   slice_max(total, n = 10) %>%  -->
+<!-- #   ggplot(aes(x = word, y = total, color = sentiment)) + -->
+<!-- #   geom_segment(aes(xend = word, yend = 0), size = 1.5) + -->
+<!-- #   geom_point(size = 4) + -->
+<!-- #   coord_flip() + -->
+<!-- #   labs(title = "Top 10 Most Frequent Words by Sentiment", -->
+<!-- #        x = "Words", -->
+<!-- #        y = "Frequency") + -->
+<!-- #   scale_color_manual(values = c("positive" = "blue", "negative" = "red")) + -->
+<!-- #   theme_minimal() -->
+<!-- # ``` -->
+<!-- but this has a problem, we have not considered that some reviews are larger than other reviews, so we need to consider the length of the reviews to have a better understanding of the sentiment distribution. For example, what if the word "movie" appears in a review with 100 words with negative sentiment, while the word "film" appears in a review with 10 words with positive sentiment, this could affect the sentiment distribution of the words. To do this, we could calculate the relative frequency of each word by the length of the reviews. -->
 
-$$
-\text{Relative Frequency} = \frac{\text{Frequency of the word}}{\text{Total number of words in the reviews}}
-$$
+<!-- $$ -->
+<!-- \text{Relative Frequency} = \frac{\text{Frequency of the word}}{\text{Total number of words in the reviews}} -->
+<!-- $$ -->
 
-```{r counting sentiments by word using (no stopwords) relative to their length, warning=FALSE}
-# Contar cuántas veces aparece cada palabra en cada sentimiento
-word_counts_sentiment <- tokenized_reviews %>%
-  anti_join(stop_words_df, by = "word") %>%
-  mutate(word = wordStem(word, language = "en")) %>%
-  count(word, sentiment) %>%
-  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>%  # Consolidar en una sola fila
-  rename(negative = negative, positive = positive)
+<!-- ```{r counting sentiments by word using (no stopwords) relative to their length, warning=FALSE} -->
+<!-- # Contar cuántas veces aparece cada palabra en cada sentimiento -->
+<!-- word_counts_sentiment <- tokenized_reviews %>% -->
+<!--   anti_join(stop_words_df, by = "word") %>% -->
+<!--   mutate(word = wordStem(word, language = "en")) %>% -->
+<!--   count(word, sentiment) %>% -->
+<!--   pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>%  # Consolidar en una sola fila -->
+<!--   rename(negative = negative, positive = positive) -->
 
-# Calcular la frecuencia relativa de cada palabra en su categoría
-word_counts_sentiment <- word_counts_sentiment %>%
-  mutate(freq_negative = negative / sum(negative),
-         freq_positive = positive / sum(positive))
+<!-- # Calcular la frecuencia relativa de cada palabra en su categoría -->
+<!-- word_counts_sentiment <- word_counts_sentiment %>% -->
+<!--   mutate(freq_negative = negative / sum(negative), -->
+<!--          freq_positive = positive / sum(positive)) -->
 
-# Mostrar las 5 palabras más frecuentes con frecuencia normalizada
-print(as_tibble(word_counts_sentiment), n = 5)
-```
+<!-- # Mostrar las 5 palabras más frecuentes con frecuencia normalizada -->
+<!-- print(as_tibble(word_counts_sentiment), n = 5) -->
+<!-- ``` -->
 
-in this code chunk, we have the top 5 words with their sentiment distribution relative to the length of the reviews, we can see that the word "movie" has a higher proportion of negative sentiment, while the word "film" has a higher proportion of positive sentiment. This analysis provides insights into the sentiment distribution of the most common words in the reviews, considering the length of the reviews.
-
-
-
-- *Stemming*
-
-
-```{r counting sentiments by word using (no stopwords), warning=FALSE}
-# Stemming y conteo por sentimiento
-word_counts_stem_sentiment <- tokenized_reviews %>%
-  anti_join(stop_words_df, by = "word") %>%
-  mutate(word = wordStem(word, language = "en")) %>%
-  count(word, sentiment, sort = TRUE) %>%
-  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>%
-  rename(negative = negative, positive = positive) %>%
-  mutate(total = positive + negative,
-         prop_positive = positive / total,
-         prop_negative = negative / total)
-
-# Mostrar las 5 palabras más frecuentes
-print(as_tibble(word_counts_stem_sentiment), n = 5)
-```
+<!-- in this code chunk, we have the top 5 words with their sentiment distribution relative to the length of the reviews, we can see that the word "movie" has a higher proportion of negative sentiment, while the word "film" has a higher proportion of positive sentiment. This analysis provides insights into the sentiment distribution of the most common words in the reviews, considering the length of the reviews. -->
 
 
 
-#### Term Frequency - Inverse document frequency (TF-IDF) Analysis
+<!-- - *Stemming* -->
+
+
+<!-- ```{r counting sentiments by word using (no stopwords), warning=FALSE} -->
+<!-- # Stemming y conteo por sentimiento -->
+<!-- word_counts_stem_sentiment <- tokenized_reviews %>% -->
+<!--   anti_join(stop_words_df, by = "word") %>% -->
+<!--   mutate(word = wordStem(word, language = "en")) %>% -->
+<!--   count(word, sentiment, sort = TRUE) %>% -->
+<!--   pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>% -->
+<!--   rename(negative = negative, positive = positive) %>% -->
+<!--   mutate(total = positive + negative, -->
+<!--          prop_positive = positive / total, -->
+<!--          prop_negative = negative / total) -->
+
+<!-- # Mostrar las 5 palabras más frecuentes -->
+<!-- print(as_tibble(word_counts_stem_sentiment), n = 5) -->
+<!-- ``` -->
+
+
+
+<!-- #### Term Frequency - Inverse document frequency (TF-IDF) Analysis -->
 
